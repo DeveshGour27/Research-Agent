@@ -1,0 +1,22 @@
+[project]
+name = "production-ai-research-agent"
+version = "1.0.0"
+description = "Production AI Research Agent"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai",
+    "pydantic",
+    "pydantic-settings",
+    "chromadb",
+    "rank-bm25",
+    "numpy",
+    "tiktoken",
+    "PyMuPDF",
+    "python-dotenv"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest"
+]

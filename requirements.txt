@@ -1,0 +1,10 @@
+openai
+pydantic
+pydantic-settings
+chromadb
+rank-bm25
+numpy
+tiktoken
+PyMuPDF
+python-dotenv
+pytest

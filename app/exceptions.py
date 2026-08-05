@@ -1,0 +1,217 @@
+"""
+Custom exception hierarchy for the Production AI Research Agent.
+
+Responsibilities:
+    - Define a base exception so callers can catch all agent errors with
+      a single ``except AgentError`` clause
+    - Group exceptions by subsystem for precise, targeted error handling
+    - Carry structured context (not just a message string) so that the
+      logging layer can emit rich, searchable records
+
+Design Decision:
+    Every exception stores a ``details`` dict. This avoids the anti-pattern
+    of embedding dynamic data inside the message string, which makes log
+    parsing harder and forces brittle regex on the consumer side.
+
+Usage:
+    raise ConfigurationError(
+        "OPENAI_API_KEY is missing",
+        details={"env_var": "OPENAI_API_KEY"},
+    )
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+# ------------------------------------------------------------------ #
+# Base
+# ------------------------------------------------------------------ #
+
+class AgentError(Exception):
+    """
+    Base exception for the Production AI Research Agent.
+
+    All custom exceptions inherit from this class, enabling broad
+    ``except AgentError`` catches at the top of the call stack.
+
+    Args:
+        message: Human-readable description of what went wrong.
+        details: Optional mapping of structured context (logged as JSON).
+    """
+
+    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.message: str = message
+        self.details: dict[str, Any] = details or {}
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(message={self.message!r}, details={self.details!r})"
+
+
+# ------------------------------------------------------------------ #
+# Configuration
+# ------------------------------------------------------------------ #
+
+class ConfigurationError(AgentError):
+    """
+    Raised when required configuration is missing or invalid.
+
+    Examples:
+        - OPENAI_API_KEY not set in production
+        - Invalid log level string
+        - chunk_overlap >= chunk_size
+    """
+
+
+# ------------------------------------------------------------------ #
+# Tool execution
+# ------------------------------------------------------------------ #
+
+class ToolError(AgentError):
+    """Base class for errors that originate inside a Tool."""
+
+
+class ToolExecutionError(ToolError):
+    """
+    Raised when a tool fails to complete its task.
+
+    Args:
+        message: Description of the failure.
+        tool_name: The tool that raised the error.
+        details: Any additional structured context.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        tool_name: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message, details={"tool_name": tool_name, **(details or {})})
+        self.tool_name: str = tool_name
+
+
+class ToolNotFoundError(ToolError):
+    """Raised when the Tool Manager cannot locate a requested tool by name."""
+
+
+class ToolInputValidationError(ToolError):
+    """Raised when the arguments passed to a tool fail validation."""
+
+
+class ToolOutputValidationError(ToolError):
+    """Raised when a tool returns output that does not match its schema."""
+
+
+# ------------------------------------------------------------------ #
+# Retrieval / RAG
+# ------------------------------------------------------------------ #
+
+class RetrievalError(AgentError):
+    """Base class for errors in the retrieval (RAG) pipeline."""
+
+
+class EmbeddingError(RetrievalError):
+    """Raised when generating or storing embeddings fails."""
+
+
+class VectorStoreError(RetrievalError):
+    """Raised when the vector database operation fails."""
+
+
+class DocumentChunkingError(RetrievalError):
+    """Raised when a document cannot be split into chunks."""
+
+
+# ------------------------------------------------------------------ #
+# Memory
+# ------------------------------------------------------------------ #
+
+class MemoryError(AgentError):
+    """Base class for memory subsystem errors."""
+
+
+class MemoryReadError(MemoryError):
+    """Raised when reading from memory fails."""
+
+
+class MemoryWriteError(MemoryError):
+    """Raised when writing to memory fails."""
+
+
+# ------------------------------------------------------------------ #
+# Planning
+# ------------------------------------------------------------------ #
+
+class PlannerError(AgentError):
+    """Base class for planner errors."""
+
+
+class PlanCreationError(PlannerError):
+    """Raised when the planner cannot produce an execution plan."""
+
+
+class PlanExecutionError(PlannerError):
+    """Raised when a previously valid plan fails during execution."""
+
+
+# ------------------------------------------------------------------ #
+# Reflection
+# ------------------------------------------------------------------ #
+
+class ReflectionError(AgentError):
+    """Raised when the reflection step cannot complete."""
+
+
+# ------------------------------------------------------------------ #
+# Output / Report generation
+# ------------------------------------------------------------------ #
+
+class OutputError(AgentError):
+    """Base class for report and output generation errors."""
+
+
+class ReportGenerationError(OutputError):
+    """Raised when formatting or writing the final report fails."""
+
+
+# ------------------------------------------------------------------ #
+# LLM / API
+# ------------------------------------------------------------------ #
+
+class LLMError(AgentError):
+    """Base class for errors related to the LLM provider."""
+
+
+class LLMAPIError(LLMError):
+    """
+    Raised when the LLM API call fails (network, rate-limit, server error).
+
+    Args:
+        message: Description of the failure.
+        status_code: HTTP status code returned by the API, if available.
+        details: Additional structured context.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        status_code: int | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message, details={"status_code": status_code, **(details or {})})
+        self.status_code: int | None = status_code
+
+
+class LLMResponseParseError(LLMError):
+    """Raised when the LLM response cannot be parsed into the expected format."""
+
+
+# ------------------------------------------------------------------ #
+# Input validation
+# ------------------------------------------------------------------ #
+
+class InputValidationError(AgentError):
+    """Raised when user-supplied input fails validation before processing."""

@@ -1,0 +1,32 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+memory/conversations/*
+!memory/conversations/.gitkeep
+memory/preferences/*
+!memory/preferences/.gitkeep
+memory/tasks/*
+!memory/tasks/.gitkeep
+reports/*
+!reports/.gitkeep
+.pytest_cache/
+chroma_db/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
