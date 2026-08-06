@@ -62,6 +62,27 @@ class Settings(BaseSettings):
         default="text-embedding-3-small",
         description="OpenAI embedding model for RAG.",
     )
+    llm_provider: str = Field(
+        default="openai",
+        min_length=1,
+        description="Configured LLM provider identifier.",
+    )
+    llm_temperature: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=2.0,
+        description="Sampling temperature for chat generation.",
+    )
+    llm_max_output_tokens: int = Field(
+        default=1_024,
+        gt=0,
+        description="Maximum number of tokens generated for one response.",
+    )
+    llm_request_timeout_seconds: float = Field(
+        default=60.0,
+        gt=0.0,
+        description="Timeout for a single LLM API request in seconds.",
+    )
 
     # ------------------------------------------------------------------ #
     # Application

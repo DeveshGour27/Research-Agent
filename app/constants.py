@@ -83,6 +83,9 @@ TOOL_TIMEOUT_SECONDS: int = 30
 # Maximum characters accepted in a single user query
 MAX_QUERY_LENGTH: int = 4096
 
+# Case-insensitive commands that terminate the interactive CLI session.
+CLI_EXIT_COMMANDS: frozenset[str] = frozenset({"exit", "quit"})
+
 
 # ------------------------------------------------------------------ #
 # Logging / output
