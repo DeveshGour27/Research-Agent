@@ -5,7 +5,7 @@ description = "Production AI Research Agent"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "openai",
+    "groq",
     "pydantic",
     "pydantic-settings",
     "chromadb",

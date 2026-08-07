@@ -50,20 +50,22 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ #
     # LLM / API
     # ------------------------------------------------------------------ #
-    openai_api_key: str = Field(
+    groq_api_key: str = Field(
         default="",
-        description="OpenAI API key. Must be set in production.",
+        description="Groq API key. Must be set in production.",
     )
     llm_model: str = Field(
-        default="gpt-4o",
-        description="Default OpenAI chat model to use.",
+        default="qwen/qwen3.6-27b",
+        min_length=1,
+        description="Primary chat model used by the configured LLM provider.",
     )
-    embedding_model: str = Field(
-        default="text-embedding-3-small",
-        description="OpenAI embedding model for RAG.",
+    llm_fallback_model: str = Field(
+        default="openai/gpt-oss-20b",
+        min_length=1,
+        description="Fallback chat model used after a transient provider failure.",
     )
     llm_provider: str = Field(
-        default="openai",
+        default="groq",
         min_length=1,
         description="Configured LLM provider identifier.",
     )
@@ -152,6 +154,15 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ #
     # Validators
     # ------------------------------------------------------------------ #
+    @field_validator("llm_model", "llm_fallback_model")
+    @classmethod
+    def model_name_must_not_be_blank(cls, model_name: str) -> str:
+        """Reject model names that contain only whitespace."""
+        normalized_model_name = model_name.strip()
+        if not normalized_model_name:
+            raise ValueError("LLM model names must not be blank.")
+        return normalized_model_name
+
     @field_validator("chunk_overlap")
     @classmethod
     def overlap_must_be_less_than_chunk_size(

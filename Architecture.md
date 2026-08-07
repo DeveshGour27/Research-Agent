@@ -255,7 +255,9 @@ LLM Framework
 
 LLM Provider
 
-- OpenAI Models (configurable)
+- Groq chat completions through a provider-neutral LLM interface
+- Primary and fallback model names are configured centrally
+- A fallback request is issued only after transient availability failures
 
 Embeddings
 
@@ -374,6 +376,7 @@ Separate Retriever | Independent RAG improvements
 Reflection module | Higher answer quality
 Prompt directory | Easier prompt management
 Config file | Centralized configuration
+Groq model fallback | Preserve chat availability for rate limits, timeouts, and server failures without coupling business services to Groq
 
 ---
 

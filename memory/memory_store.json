@@ -1,0 +1,3279 @@
+{
+  "users": {
+    "c66a07c7-160d-44ce-86fd-2daf7cf60fb2": {
+      "user_id": "c66a07c7-160d-44ce-86fd-2daf7cf60fb2",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.377502+00:00"
+    },
+    "8edfe088-abe0-4413-aa14-b29fd25a0df5": {
+      "user_id": "8edfe088-abe0-4413-aa14-b29fd25a0df5",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.420589+00:00"
+    },
+    "c549ecd1-dc69-47ad-8017-9d307e3aeb7b": {
+      "user_id": "c549ecd1-dc69-47ad-8017-9d307e3aeb7b",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.461256+00:00"
+    },
+    "901626c6-a1bf-4b79-af38-a2aec5ca5953": {
+      "user_id": "901626c6-a1bf-4b79-af38-a2aec5ca5953",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.506223+00:00"
+    },
+    "7e596e86-0053-41b6-841d-5c12e89faad8": {
+      "user_id": "7e596e86-0053-41b6-841d-5c12e89faad8",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.756992+00:00"
+    },
+    "8d371fc6-e21b-4e82-8e43-684bcb9390f9": {
+      "user_id": "8d371fc6-e21b-4e82-8e43-684bcb9390f9",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.815663+00:00"
+    },
+    "dbdebc57-bf14-43d5-8e5f-85f4e2c74bfd": {
+      "user_id": "dbdebc57-bf14-43d5-8e5f-85f4e2c74bfd",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.876854+00:00"
+    },
+    "55aca107-0a82-4dcd-876a-6b73ba375e3c": {
+      "user_id": "55aca107-0a82-4dcd-876a-6b73ba375e3c",
+      "email": null,
+      "created_at": "2026-08-07T17:31:24.933005+00:00"
+    },
+    "c77243fc-37c7-49f6-a30e-44b84803a1b5": {
+      "user_id": "c77243fc-37c7-49f6-a30e-44b84803a1b5",
+      "email": null,
+      "created_at": "2026-08-07T17:31:25.013453+00:00"
+    },
+    "55b80105-d105-43e0-8937-f7009136d587": {
+      "user_id": "55b80105-d105-43e0-8937-f7009136d587",
+      "email": null,
+      "created_at": "2026-08-07T17:31:25.096999+00:00"
+    },
+    "4fabc371-1f97-4b7a-ad3c-c28f48742296": {
+      "user_id": "4fabc371-1f97-4b7a-ad3c-c28f48742296",
+      "email": null,
+      "created_at": "2026-08-07T17:31:25.190970+00:00"
+    },
+    "4205b755-cd1b-4e17-b8c0-9cca9fe4d3c2": {
+      "user_id": "4205b755-cd1b-4e17-b8c0-9cca9fe4d3c2",
+      "email": null,
+      "created_at": "2026-08-07T17:31:25.298896+00:00"
+    },
+    "253a1436-a8cf-468b-b576-997b8f77321f": {
+      "user_id": "253a1436-a8cf-468b-b576-997b8f77321f",
+      "email": "johndoe@mail.com",
+      "created_at": "2026-08-07T17:33:32.104400+00:00"
+    },
+    "5a29e9f6-9af8-453e-8d1c-c302a52e9b5d": {
+      "user_id": "5a29e9f6-9af8-453e-8d1c-c302a52e9b5d",
+      "email": null,
+      "created_at": "2026-08-07T17:39:09.986590+00:00"
+    },
+    "505f5e63-3d82-4b08-8890-43cd61367f45": {
+      "user_id": "505f5e63-3d82-4b08-8890-43cd61367f45",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.028945+00:00"
+    },
+    "bb2a1079-06df-4321-9aff-e1424e18791d": {
+      "user_id": "bb2a1079-06df-4321-9aff-e1424e18791d",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.098625+00:00"
+    },
+    "9c4a5866-4c67-44eb-add0-2622a588a3ab": {
+      "user_id": "9c4a5866-4c67-44eb-add0-2622a588a3ab",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.162362+00:00"
+    },
+    "5d04835f-5fdb-420d-bbfd-e52884da7ce5": {
+      "user_id": "5d04835f-5fdb-420d-bbfd-e52884da7ce5",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.444813+00:00"
+    },
+    "5f7129bd-792c-4e1e-b7a9-abe3b71d2a37": {
+      "user_id": "5f7129bd-792c-4e1e-b7a9-abe3b71d2a37",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.608145+00:00"
+    },
+    "5bfa73f8-7a76-45c6-82a5-d36e57b503c5": {
+      "user_id": "5bfa73f8-7a76-45c6-82a5-d36e57b503c5",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.672574+00:00"
+    },
+    "e842dfdc-a0e9-4c23-a497-5c051f78eca9": {
+      "user_id": "e842dfdc-a0e9-4c23-a497-5c051f78eca9",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.728311+00:00"
+    },
+    "d01cd960-eec5-4b10-9418-6581e48ba39f": {
+      "user_id": "d01cd960-eec5-4b10-9418-6581e48ba39f",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.808230+00:00"
+    },
+    "651622f1-ae4f-4874-bec3-b6e246dda064": {
+      "user_id": "651622f1-ae4f-4874-bec3-b6e246dda064",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.901868+00:00"
+    },
+    "e563f59b-b541-47ca-9083-c55c7e33721c": {
+      "user_id": "e563f59b-b541-47ca-9083-c55c7e33721c",
+      "email": null,
+      "created_at": "2026-08-07T17:39:10.990431+00:00"
+    },
+    "cdd3a8cf-868a-4574-9214-8eb6fff765aa": {
+      "user_id": "cdd3a8cf-868a-4574-9214-8eb6fff765aa",
+      "email": null,
+      "created_at": "2026-08-07T17:39:11.090580+00:00"
+    },
+    "5ecd2814-d895-4504-80e5-7a0b74469af5": {
+      "user_id": "5ecd2814-d895-4504-80e5-7a0b74469af5",
+      "email": null,
+      "created_at": "2026-08-07T17:39:34.952063+00:00"
+    },
+    "c8705728-c908-4d7d-8eb5-ebfc60412a83": {
+      "user_id": "c8705728-c908-4d7d-8eb5-ebfc60412a83",
+      "email": null,
+      "created_at": "2026-08-07T17:39:40.576794+00:00"
+    },
+    "c3b97713-1a65-4fa6-8cd9-21ba4cc64562": {
+      "user_id": "c3b97713-1a65-4fa6-8cd9-21ba4cc64562",
+      "email": null,
+      "created_at": "2026-08-07T17:39:40.643124+00:00"
+    },
+    "899fd41f-509a-4683-b9ed-2e3116781198": {
+      "user_id": "899fd41f-509a-4683-b9ed-2e3116781198",
+      "email": null,
+      "created_at": "2026-08-07T17:39:40.707640+00:00"
+    },
+    "4bd6e443-e035-402e-9ad2-9572ffabe0a4": {
+      "user_id": "4bd6e443-e035-402e-9ad2-9572ffabe0a4",
+      "email": null,
+      "created_at": "2026-08-07T17:39:40.775875+00:00"
+    },
+    "c46ba2bb-bc43-47e0-9d21-1a8bd7322e03": {
+      "user_id": "c46ba2bb-bc43-47e0-9d21-1a8bd7322e03",
+      "email": null,
+      "created_at": "2026-08-07T17:39:40.982240+00:00"
+    },
+    "9035bb58-a4cd-4441-9f72-dd665afdc668": {
+      "user_id": "9035bb58-a4cd-4441-9f72-dd665afdc668",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.051524+00:00"
+    },
+    "90df14b1-29ce-4230-8c1f-d4d86b0d5b14": {
+      "user_id": "90df14b1-29ce-4230-8c1f-d4d86b0d5b14",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.113154+00:00"
+    },
+    "88f79757-eb20-43b7-8677-d6b3b359a5ed": {
+      "user_id": "88f79757-eb20-43b7-8677-d6b3b359a5ed",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.182291+00:00"
+    },
+    "12d7a857-55a3-47d4-8736-def2baa8b09b": {
+      "user_id": "12d7a857-55a3-47d4-8736-def2baa8b09b",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.279738+00:00"
+    },
+    "fb1ad70c-d2f2-4ddf-b9a6-5876dea0abbf": {
+      "user_id": "fb1ad70c-d2f2-4ddf-b9a6-5876dea0abbf",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.366263+00:00"
+    },
+    "8d75a42b-f8a5-4c4e-9b13-70a59bdb6097": {
+      "user_id": "8d75a42b-f8a5-4c4e-9b13-70a59bdb6097",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.457077+00:00"
+    },
+    "8403c435-d45c-419a-a012-7ce77804206e": {
+      "user_id": "8403c435-d45c-419a-a012-7ce77804206e",
+      "email": null,
+      "created_at": "2026-08-07T17:39:41.571687+00:00"
+    },
+    "068e7f5a-faf1-41fd-9b49-1b832b3ef3b4": {
+      "user_id": "068e7f5a-faf1-41fd-9b49-1b832b3ef3b4",
+      "email": null,
+      "created_at": "2026-08-07T17:42:52.990683+00:00"
+    },
+    "569b8f12-7b59-47fd-9c59-fe5343a875ef": {
+      "user_id": "569b8f12-7b59-47fd-9c59-fe5343a875ef",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.058813+00:00"
+    },
+    "4a8874c9-4bb2-402e-96ba-02c7f5da7aa6": {
+      "user_id": "4a8874c9-4bb2-402e-96ba-02c7f5da7aa6",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.123142+00:00"
+    },
+    "93c1302c-3bbf-49be-843f-cb5c39a27151": {
+      "user_id": "93c1302c-3bbf-49be-843f-cb5c39a27151",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.189201+00:00"
+    },
+    "f8c04aac-8f36-4943-b17f-02154f739d3e": {
+      "user_id": "f8c04aac-8f36-4943-b17f-02154f739d3e",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.502043+00:00"
+    },
+    "0ec899c7-eb46-4a5b-90bc-61a2159a9805": {
+      "user_id": "0ec899c7-eb46-4a5b-90bc-61a2159a9805",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.558973+00:00"
+    },
+    "1287e4ef-a314-420a-83dc-b7773b77b229": {
+      "user_id": "1287e4ef-a314-420a-83dc-b7773b77b229",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.629891+00:00"
+    },
+    "97ead4de-6262-4da6-aa8e-65b0d6142c53": {
+      "user_id": "97ead4de-6262-4da6-aa8e-65b0d6142c53",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.705911+00:00"
+    },
+    "5d75a047-d0f4-4a8e-bd66-6d7f38b161ba": {
+      "user_id": "5d75a047-d0f4-4a8e-bd66-6d7f38b161ba",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.794323+00:00"
+    },
+    "4eb54d6c-07a5-42d2-b40b-c4d500f2c70c": {
+      "user_id": "4eb54d6c-07a5-42d2-b40b-c4d500f2c70c",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.882544+00:00"
+    },
+    "4c1667df-26d0-47b1-afc8-b21ddfb420e8": {
+      "user_id": "4c1667df-26d0-47b1-afc8-b21ddfb420e8",
+      "email": null,
+      "created_at": "2026-08-07T17:42:53.970277+00:00"
+    },
+    "13692c23-91fd-4473-85b9-07e99bea8b9e": {
+      "user_id": "13692c23-91fd-4473-85b9-07e99bea8b9e",
+      "email": null,
+      "created_at": "2026-08-07T17:42:54.086875+00:00"
+    },
+    "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743": {
+      "user_id": "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743",
+      "email": null,
+      "created_at": "2026-08-07T17:42:54.201721+00:00"
+    },
+    "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f": {
+      "user_id": "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f",
+      "email": null,
+      "created_at": "2026-08-07T17:42:54.306181+00:00"
+    },
+    "82a4c248-6270-4949-9085-302f73395949": {
+      "user_id": "82a4c248-6270-4949-9085-302f73395949",
+      "email": null,
+      "created_at": "2026-08-07T17:43:56.616569+00:00"
+    },
+    "497e5c71-ff38-4e17-9386-dace3387c8d6": {
+      "user_id": "497e5c71-ff38-4e17-9386-dace3387c8d6",
+      "email": null,
+      "created_at": "2026-08-07T17:43:56.690993+00:00"
+    },
+    "074ce28c-8706-4e2d-9478-c69b896d0830": {
+      "user_id": "074ce28c-8706-4e2d-9478-c69b896d0830",
+      "email": null,
+      "created_at": "2026-08-07T17:43:56.757308+00:00"
+    },
+    "f3efb430-7d44-4fc4-a2bb-b7b989b7a9d1": {
+      "user_id": "f3efb430-7d44-4fc4-a2bb-b7b989b7a9d1",
+      "email": null,
+      "created_at": "2026-08-07T17:43:56.823952+00:00"
+    },
+    "2adf3d09-366e-49f9-b8cf-032838547797": {
+      "user_id": "2adf3d09-366e-49f9-b8cf-032838547797",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.057673+00:00"
+    },
+    "72e5ea46-fb44-4010-99b4-084c0f8053ef": {
+      "user_id": "72e5ea46-fb44-4010-99b4-084c0f8053ef",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.129897+00:00"
+    },
+    "f088c456-0b48-486f-b083-e10a617c92ef": {
+      "user_id": "f088c456-0b48-486f-b083-e10a617c92ef",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.194801+00:00"
+    },
+    "475c87bf-0a97-445f-ba8d-5ff89c5e693d": {
+      "user_id": "475c87bf-0a97-445f-ba8d-5ff89c5e693d",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.255851+00:00"
+    },
+    "8c0db990-9b22-4787-a4ad-00fc59f4dbc9": {
+      "user_id": "8c0db990-9b22-4787-a4ad-00fc59f4dbc9",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.342156+00:00"
+    },
+    "7b49ea26-20fc-4be9-b7eb-f029113fd866": {
+      "user_id": "7b49ea26-20fc-4be9-b7eb-f029113fd866",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.419965+00:00"
+    },
+    "e3ff32a5-90b5-408c-9bac-6fb89eb7d89a": {
+      "user_id": "e3ff32a5-90b5-408c-9bac-6fb89eb7d89a",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.524093+00:00"
+    },
+    "6bcde32b-576a-454c-8f2a-469875361920": {
+      "user_id": "6bcde32b-576a-454c-8f2a-469875361920",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.640304+00:00"
+    },
+    "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab": {
+      "user_id": "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.757974+00:00"
+    },
+    "20295d6d-4a95-4914-8280-0ab3aade5fbb": {
+      "user_id": "20295d6d-4a95-4914-8280-0ab3aade5fbb",
+      "email": null,
+      "created_at": "2026-08-07T17:43:57.868099+00:00"
+    },
+    "f8690d52-57aa-4691-b3ab-66ee8dc9cdd2": {
+      "user_id": "f8690d52-57aa-4691-b3ab-66ee8dc9cdd2",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.119660+00:00"
+    },
+    "0785d695-0837-4357-8ceb-abd0cb3646d5": {
+      "user_id": "0785d695-0837-4357-8ceb-abd0cb3646d5",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.183842+00:00"
+    },
+    "be8c7802-3413-4be6-bf3e-de9c0de5c55a": {
+      "user_id": "be8c7802-3413-4be6-bf3e-de9c0de5c55a",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.247494+00:00"
+    },
+    "c5bbc493-cc97-4849-a1d4-1252ccd9607b": {
+      "user_id": "c5bbc493-cc97-4849-a1d4-1252ccd9607b",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.317135+00:00"
+    },
+    "f43cd254-adab-4a2f-aa67-80292cbcb59d": {
+      "user_id": "f43cd254-adab-4a2f-aa67-80292cbcb59d",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.462612+00:00"
+    },
+    "cb283e15-478b-469e-a3f1-7b763b9ad808": {
+      "user_id": "cb283e15-478b-469e-a3f1-7b763b9ad808",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.526129+00:00"
+    },
+    "4ddc8420-bb46-40a2-a06c-003723698edc": {
+      "user_id": "4ddc8420-bb46-40a2-a06c-003723698edc",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.591552+00:00"
+    },
+    "9d3ae713-5b90-4289-8d10-913bdc55f1d6": {
+      "user_id": "9d3ae713-5b90-4289-8d10-913bdc55f1d6",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.663340+00:00"
+    },
+    "960a7e36-0ca4-4884-979c-c2777ee5bff3": {
+      "user_id": "960a7e36-0ca4-4884-979c-c2777ee5bff3",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.763032+00:00"
+    },
+    "ec495526-d1f0-40b5-9339-1a4e5d2e6470": {
+      "user_id": "ec495526-d1f0-40b5-9339-1a4e5d2e6470",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.855760+00:00"
+    },
+    "67072e55-d02b-4c47-900a-76c2468cc5c3": {
+      "user_id": "67072e55-d02b-4c47-900a-76c2468cc5c3",
+      "email": null,
+      "created_at": "2026-08-07T18:08:56.936754+00:00"
+    },
+    "3f849734-2bd0-4715-a68b-aee732d11f0c": {
+      "user_id": "3f849734-2bd0-4715-a68b-aee732d11f0c",
+      "email": null,
+      "created_at": "2026-08-07T18:08:57.053707+00:00"
+    },
+    "f2202f49-042c-4f64-b125-7f5e080bc50f": {
+      "user_id": "f2202f49-042c-4f64-b125-7f5e080bc50f",
+      "email": null,
+      "created_at": "2026-08-07T18:08:57.171471+00:00"
+    },
+    "85a72c19-a343-4e85-8db5-7f4ad6c40e86": {
+      "user_id": "85a72c19-a343-4e85-8db5-7f4ad6c40e86",
+      "email": null,
+      "created_at": "2026-08-07T18:08:57.270979+00:00"
+    }
+  },
+  "emails": {
+    "johndoe@mail.com": "253a1436-a8cf-468b-b576-997b8f77321f"
+  },
+  "chats": {
+    "c66a07c7-160d-44ce-86fd-2daf7cf60fb2": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.398158+00:00",
+        "updated_at": "2026-08-07T17:31:24.407971+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "8edfe088-abe0-4413-aa14-b29fd25a0df5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.432058+00:00",
+        "updated_at": "2026-08-07T17:31:24.450045+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "c549ecd1-dc69-47ad-8017-9d307e3aeb7b": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.472611+00:00",
+        "updated_at": "2026-08-07T17:31:24.492405+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "901626c6-a1bf-4b79-af38-a2aec5ca5953": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.514376+00:00",
+        "updated_at": "2026-08-07T17:31:24.535391+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "7e596e86-0053-41b6-841d-5c12e89faad8": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.770295+00:00",
+        "updated_at": "2026-08-07T17:31:24.790653+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "8d371fc6-e21b-4e82-8e43-684bcb9390f9": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.829292+00:00",
+        "updated_at": "2026-08-07T17:31:24.851803+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "dbdebc57-bf14-43d5-8e5f-85f4e2c74bfd": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.889006+00:00",
+        "updated_at": "2026-08-07T17:31:24.911676+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "55aca107-0a82-4dcd-876a-6b73ba375e3c": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:24.946355+00:00",
+        "updated_at": "2026-08-07T17:31:24.992550+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "c77243fc-37c7-49f6-a30e-44b84803a1b5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:25.027751+00:00",
+        "updated_at": "2026-08-07T17:31:25.073825+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "55b80105-d105-43e0-8937-f7009136d587": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:25.124872+00:00",
+        "updated_at": "2026-08-07T17:31:25.169020+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "4fabc371-1f97-4b7a-ad3c-c28f48742296": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:25.209694+00:00",
+        "updated_at": "2026-08-07T17:31:25.273638+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "4205b755-cd1b-4e17-b8c0-9cca9fe4d3c2": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:31:25.311470+00:00",
+        "updated_at": "2026-08-07T17:31:25.366474+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "253a1436-a8cf-468b-b576-997b8f77321f": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:33:39.385220+00:00",
+        "updated_at": "2026-08-07T17:34:29.884299+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "hey i am john"
+          },
+          {
+            "role": "assistant",
+            "content": "Hello John! It's nice to meet you. How can I help you today?"
+          },
+          {
+            "role": "user",
+            "content": "what you can do for me?"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi John! I can help you with a wide variety of tasks. Here are a few examples of what I can do:\n\n*   **Answer Questions:** I can look up facts, explain complex concepts, or answer general knowledge questions.\n*   **Writing & Editing:** I can draft emails, essays, stories, or help you polish and proofread your own writing.\n*   **Coding:** I can write, debug, and explain code in many programming languages.\n*   **Math & Logic:** I can solve math problems and help with logical reasoning.\n*   **Brainstorming:** If you need ideas for a project, a gift, or a dinner menu, I can generate a list for you.\n*   **Summarizing:** You can paste a long article or document, and I can summarize the key points for you.\n\nIs there anything specific you'd like to work on right now?"
+          },
+          {
+            "role": "user",
+            "content": "write a code for the fibonacci number series print upto 5 iterations."
+          },
+          {
+            "role": "assistant",
+            "content": "Here is a simple Python code snippet to print the Fibonacci series up to 5 iterations:\n\n```python\ndef print_fibonacci(n):\n    a, b = 0, 1\n    for _ in range(n):\n        print(a)\n        a, b = b, a + b\n\n# Print the first 5 numbers\nprint_fibonacci(5)\n```\n\n**Output:**\n```\n0\n1\n1\n2\n3\n```\n\n**How it works:**\n1.  We start with `a = 0` and `b = 1`.\n2.  The loop runs 5 times.\n3.  In each iteration, it prints the current value of `a`.\n4.  Then, it updates `a` to the value of `b`, and `b` to the sum of the old `a` and `b`."
+          }
+        ]
+      }
+    },
+    "5a29e9f6-9af8-453e-8d1c-c302a52e9b5d": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:09.997091+00:00",
+        "updated_at": "2026-08-07T17:39:10.009772+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "505f5e63-3d82-4b08-8890-43cd61367f45": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.055078+00:00",
+        "updated_at": "2026-08-07T17:39:10.073997+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "bb2a1079-06df-4321-9aff-e1424e18791d": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.120237+00:00",
+        "updated_at": "2026-08-07T17:39:10.135409+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "9c4a5866-4c67-44eb-add0-2622a588a3ab": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.187182+00:00",
+        "updated_at": "2026-08-07T17:39:10.214030+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "5d04835f-5fdb-420d-bbfd-e52884da7ce5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.471736+00:00",
+        "updated_at": "2026-08-07T17:39:10.496113+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "5f7129bd-792c-4e1e-b7a9-abe3b71d2a37": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.627599+00:00",
+        "updated_at": "2026-08-07T17:39:10.653663+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "5bfa73f8-7a76-45c6-82a5-d36e57b503c5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.685454+00:00",
+        "updated_at": "2026-08-07T17:39:10.704602+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "e842dfdc-a0e9-4c23-a497-5c051f78eca9": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.740635+00:00",
+        "updated_at": "2026-08-07T17:39:10.785851+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "d01cd960-eec5-4b10-9418-6581e48ba39f": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.830663+00:00",
+        "updated_at": "2026-08-07T17:39:10.877215+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "651622f1-ae4f-4874-bec3-b6e246dda064": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:10.925512+00:00",
+        "updated_at": "2026-08-07T17:39:10.967401+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "e563f59b-b541-47ca-9083-c55c7e33721c": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:11.010064+00:00",
+        "updated_at": "2026-08-07T17:39:11.069441+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "cdd3a8cf-868a-4574-9214-8eb6fff765aa": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:11.109357+00:00",
+        "updated_at": "2026-08-07T17:39:11.173536+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "5ecd2814-d895-4504-80e5-7a0b74469af5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:34.977096+00:00",
+        "updated_at": "2026-08-07T17:39:35.001929+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "c8705728-c908-4d7d-8eb5-ebfc60412a83": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:40.598163+00:00",
+        "updated_at": "2026-08-07T17:39:40.620483+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "c3b97713-1a65-4fa6-8cd9-21ba4cc64562": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:40.662086+00:00",
+        "updated_at": "2026-08-07T17:39:40.683448+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "899fd41f-509a-4683-b9ed-2e3116781198": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:40.725556+00:00",
+        "updated_at": "2026-08-07T17:39:40.751044+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "4bd6e443-e035-402e-9ad2-9572ffabe0a4": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:40.798331+00:00",
+        "updated_at": "2026-08-07T17:39:40.820487+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "c46ba2bb-bc43-47e0-9d21-1a8bd7322e03": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.006454+00:00",
+        "updated_at": "2026-08-07T17:39:41.028328+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "9035bb58-a4cd-4441-9f72-dd665afdc668": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.073023+00:00",
+        "updated_at": "2026-08-07T17:39:41.091818+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "90df14b1-29ce-4230-8c1f-d4d86b0d5b14": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.134442+00:00",
+        "updated_at": "2026-08-07T17:39:41.153305+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "88f79757-eb20-43b7-8677-d6b3b359a5ed": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.208118+00:00",
+        "updated_at": "2026-08-07T17:39:41.253357+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "12d7a857-55a3-47d4-8736-def2baa8b09b": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.300122+00:00",
+        "updated_at": "2026-08-07T17:39:41.343674+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "fb1ad70c-d2f2-4ddf-b9a6-5876dea0abbf": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.388818+00:00",
+        "updated_at": "2026-08-07T17:39:41.435454+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "8d75a42b-f8a5-4c4e-9b13-70a59bdb6097": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.478279+00:00",
+        "updated_at": "2026-08-07T17:39:41.544861+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "8403c435-d45c-419a-a012-7ce77804206e": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:39:41.590280+00:00",
+        "updated_at": "2026-08-07T17:39:41.655310+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "068e7f5a-faf1-41fd-9b49-1b832b3ef3b4": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.009163+00:00",
+        "updated_at": "2026-08-07T17:42:53.036930+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "569b8f12-7b59-47fd-9c59-fe5343a875ef": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.079071+00:00",
+        "updated_at": "2026-08-07T17:42:53.104435+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "4a8874c9-4bb2-402e-96ba-02c7f5da7aa6": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.143802+00:00",
+        "updated_at": "2026-08-07T17:42:53.169176+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "93c1302c-3bbf-49be-843f-cb5c39a27151": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.211904+00:00",
+        "updated_at": "2026-08-07T17:42:53.235197+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "f8c04aac-8f36-4943-b17f-02154f739d3e": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.514856+00:00",
+        "updated_at": "2026-08-07T17:42:53.537654+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "0ec899c7-eb46-4a5b-90bc-61a2159a9805": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.582327+00:00",
+        "updated_at": "2026-08-07T17:42:53.604402+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "1287e4ef-a314-420a-83dc-b7773b77b229": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.656231+00:00",
+        "updated_at": "2026-08-07T17:42:53.677707+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "97ead4de-6262-4da6-aa8e-65b0d6142c53": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.726639+00:00",
+        "updated_at": "2026-08-07T17:42:53.771143+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "5d75a047-d0f4-4a8e-bd66-6d7f38b161ba": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.817137+00:00",
+        "updated_at": "2026-08-07T17:42:53.858723+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "4eb54d6c-07a5-42d2-b40b-c4d500f2c70c": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.902996+00:00",
+        "updated_at": "2026-08-07T17:42:53.948658+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "4c1667df-26d0-47b1-afc8-b21ddfb420e8": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:53.993381+00:00",
+        "updated_at": "2026-08-07T17:42:54.066249+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "13692c23-91fd-4473-85b9-07e99bea8b9e": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:54.111149+00:00",
+        "updated_at": "2026-08-07T17:42:54.176715+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:54.220958+00:00",
+        "updated_at": "2026-08-07T17:42:54.280394+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Show me Python tips"
+          },
+          {
+            "role": "assistant",
+            "content": "Answer with context."
+          }
+        ]
+      }
+    },
+    "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:42:54.326416+00:00",
+        "updated_at": "2026-08-07T17:42:54.390672+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Any concise suggestion?"
+          },
+          {
+            "role": "assistant",
+            "content": "Done."
+          }
+        ]
+      }
+    },
+    "82a4c248-6270-4949-9085-302f73395949": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:56.641662+00:00",
+        "updated_at": "2026-08-07T17:43:56.667816+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "497e5c71-ff38-4e17-9386-dace3387c8d6": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:56.711138+00:00",
+        "updated_at": "2026-08-07T17:43:56.738150+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "074ce28c-8706-4e2d-9478-c69b896d0830": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:56.776835+00:00",
+        "updated_at": "2026-08-07T17:43:56.801684+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "f3efb430-7d44-4fc4-a2bb-b7b989b7a9d1": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:56.842075+00:00",
+        "updated_at": "2026-08-07T17:43:56.863456+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "2adf3d09-366e-49f9-b8cf-032838547797": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.079218+00:00",
+        "updated_at": "2026-08-07T17:43:57.103494+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "72e5ea46-fb44-4010-99b4-084c0f8053ef": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.152046+00:00",
+        "updated_at": "2026-08-07T17:43:57.174746+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "f088c456-0b48-486f-b083-e10a617c92ef": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.209305+00:00",
+        "updated_at": "2026-08-07T17:43:57.232251+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "475c87bf-0a97-445f-ba8d-5ff89c5e693d": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.278451+00:00",
+        "updated_at": "2026-08-07T17:43:57.324983+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "8c0db990-9b22-4787-a4ad-00fc59f4dbc9": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.356825+00:00",
+        "updated_at": "2026-08-07T17:43:57.394455+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "7b49ea26-20fc-4be9-b7eb-f029113fd866": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.444718+00:00",
+        "updated_at": "2026-08-07T17:43:57.496419+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "e3ff32a5-90b5-408c-9bac-6fb89eb7d89a": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.547707+00:00",
+        "updated_at": "2026-08-07T17:43:57.615671+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "6bcde32b-576a-454c-8f2a-469875361920": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.659205+00:00",
+        "updated_at": "2026-08-07T17:43:57.729642+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.777843+00:00",
+        "updated_at": "2026-08-07T17:43:57.844291+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Show me Python tips"
+          },
+          {
+            "role": "assistant",
+            "content": "Answer with context."
+          }
+        ]
+      }
+    },
+    "20295d6d-4a95-4914-8280-0ab3aade5fbb": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T17:43:57.892518+00:00",
+        "updated_at": "2026-08-07T17:43:57.974846+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Any concise suggestion?"
+          },
+          {
+            "role": "assistant",
+            "content": "Done."
+          }
+        ]
+      }
+    },
+    "f8690d52-57aa-4691-b3ab-66ee8dc9cdd2": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.135820+00:00",
+        "updated_at": "2026-08-07T18:08:56.157606+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Direct answer"
+          }
+        ]
+      }
+    },
+    "0785d695-0837-4357-8ceb-abd0cb3646d5": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.203403+00:00",
+        "updated_at": "2026-08-07T18:08:56.225302+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is 2 + 3?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 3\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "5"
+          },
+          {
+            "role": "assistant",
+            "content": "The answer is 5."
+          }
+        ]
+      }
+    },
+    "be8c7802-3413-4be6-bf3e-de9c0de5c55a": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.270847+00:00",
+        "updated_at": "2026-08-07T18:08:56.291501+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Compute (10 + 5) * 2."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"10 + 5\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"15 * 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "30"
+          },
+          {
+            "role": "assistant",
+            "content": "Final answer: 30."
+          }
+        ]
+      }
+    },
+    "c5bbc493-cc97-4849-a1d4-1252ccd9607b": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.335710+00:00",
+        "updated_at": "2026-08-07T18:08:56.356868+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Try the failing tool."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-err",
+                "type": "function",
+                "function": {
+                  "name": "always_fail",
+                  "arguments": "{}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-err",
+            "content": "Error: Tool exploded."
+          },
+          {
+            "role": "assistant",
+            "content": "Recovered after tool error."
+          }
+        ]
+      }
+    },
+    "f43cd254-adab-4a2f-aa67-80292cbcb59d": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.481226+00:00",
+        "updated_at": "2026-08-07T18:08:56.502049+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Say hello."
+          },
+          {
+            "role": "assistant",
+            "content": "Fallback answer."
+          }
+        ]
+      }
+    },
+    "cb283e15-478b-469e-a3f1-7b763b9ad808": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.545584+00:00",
+        "updated_at": "2026-08-07T18:08:56.570272+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Keep going."
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"1 + 1\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "2"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-2",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"2 + 2\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-2",
+            "content": "4"
+          }
+        ]
+      }
+    },
+    "4ddc8420-bb46-40a2-a06c-003723698edc": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.612856+00:00",
+        "updated_at": "2026-08-07T18:08:56.638652+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there."
+          }
+        ]
+      }
+    },
+    "9d3ae713-5b90-4289-8d10-913bdc55f1d6": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.681582+00:00",
+        "updated_at": "2026-08-07T18:08:56.735268+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "What is the capital of France?"
+          },
+          {
+            "role": "assistant",
+            "content": "Paris."
+          },
+          {
+            "role": "user",
+            "content": "What did I ask earlier?"
+          },
+          {
+            "role": "assistant",
+            "content": "You asked about France's capital."
+          }
+        ]
+      }
+    },
+    "960a7e36-0ca4-4884-979c-c2777ee5bff3": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.786441+00:00",
+        "updated_at": "2026-08-07T18:08:56.829767+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "First question"
+          },
+          {
+            "role": "assistant",
+            "content": "First answer."
+          },
+          {
+            "role": "user",
+            "content": "Second question"
+          },
+          {
+            "role": "assistant",
+            "content": "Second answer."
+          }
+        ]
+      }
+    },
+    "ec495526-d1f0-40b5-9339-1a4e5d2e6470": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.871566+00:00",
+        "updated_at": "2026-08-07T18:08:56.915071+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Calculate 7 + 8"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                  "name": "calculate",
+                  "arguments": "{\"expression\": \"7 + 8\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call-1",
+            "content": "15"
+          },
+          {
+            "role": "assistant",
+            "content": "15"
+          },
+          {
+            "role": "user",
+            "content": "Use prior context"
+          },
+          {
+            "role": "assistant",
+            "content": "Using previous tool result."
+          }
+        ]
+      }
+    },
+    "67072e55-d02b-4c47-900a-76c2468cc5c3": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:56.959648+00:00",
+        "updated_at": "2026-08-07T18:08:57.032933+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Q1"
+          },
+          {
+            "role": "assistant",
+            "content": "A1"
+          },
+          {
+            "role": "user",
+            "content": "Q2"
+          },
+          {
+            "role": "assistant",
+            "content": "A2"
+          },
+          {
+            "role": "user",
+            "content": "Q3"
+          },
+          {
+            "role": "assistant",
+            "content": "A3"
+          }
+        ]
+      }
+    },
+    "3f849734-2bd0-4715-a68b-aee732d11f0c": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:57.075357+00:00",
+        "updated_at": "2026-08-07T18:08:57.146691+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Second"
+          },
+          {
+            "role": "assistant",
+            "content": "After reset."
+          }
+        ]
+      }
+    },
+    "f2202f49-042c-4f64-b125-7f5e080bc50f": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:57.188729+00:00",
+        "updated_at": "2026-08-07T18:08:57.248989+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Show me Python tips"
+          },
+          {
+            "role": "assistant",
+            "content": "Answer with context."
+          }
+        ]
+      }
+    },
+    "85a72c19-a343-4e85-8db5-7f4ad6c40e86": {
+      "default": {
+        "chat_id": "default",
+        "created_at": "2026-08-07T18:08:57.290658+00:00",
+        "updated_at": "2026-08-07T18:08:57.358803+00:00",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a helpful AI assistant. You have access to tools that you can use to answer questions accurately and efficiently. Use a tool whenever it is the most efficient way to answer. Once you have all the information you need, respond with a clear, direct final answer \u2014 do not call another tool."
+          },
+          {
+            "role": "user",
+            "content": "Any concise suggestion?"
+          },
+          {
+            "role": "assistant",
+            "content": "Done."
+          }
+        ]
+      }
+    }
+  },
+  "memories": {
+    "c66a07c7-160d-44ce-86fd-2daf7cf60fb2": [],
+    "8edfe088-abe0-4413-aa14-b29fd25a0df5": [],
+    "c549ecd1-dc69-47ad-8017-9d307e3aeb7b": [],
+    "901626c6-a1bf-4b79-af38-a2aec5ca5953": [],
+    "7e596e86-0053-41b6-841d-5c12e89faad8": [],
+    "8d371fc6-e21b-4e82-8e43-684bcb9390f9": [],
+    "dbdebc57-bf14-43d5-8e5f-85f4e2c74bfd": [],
+    "55aca107-0a82-4dcd-876a-6b73ba375e3c": [],
+    "c77243fc-37c7-49f6-a30e-44b84803a1b5": [],
+    "55b80105-d105-43e0-8937-f7009136d587": [],
+    "4fabc371-1f97-4b7a-ad3c-c28f48742296": [],
+    "4205b755-cd1b-4e17-b8c0-9cca9fe4d3c2": [],
+    "253a1436-a8cf-468b-b576-997b8f77321f": [],
+    "5a29e9f6-9af8-453e-8d1c-c302a52e9b5d": [],
+    "505f5e63-3d82-4b08-8890-43cd61367f45": [],
+    "bb2a1079-06df-4321-9aff-e1424e18791d": [],
+    "9c4a5866-4c67-44eb-add0-2622a588a3ab": [],
+    "5d04835f-5fdb-420d-bbfd-e52884da7ce5": [],
+    "5f7129bd-792c-4e1e-b7a9-abe3b71d2a37": [],
+    "5bfa73f8-7a76-45c6-82a5-d36e57b503c5": [],
+    "e842dfdc-a0e9-4c23-a497-5c051f78eca9": [],
+    "d01cd960-eec5-4b10-9418-6581e48ba39f": [],
+    "651622f1-ae4f-4874-bec3-b6e246dda064": [],
+    "e563f59b-b541-47ca-9083-c55c7e33721c": [],
+    "cdd3a8cf-868a-4574-9214-8eb6fff765aa": [],
+    "5ecd2814-d895-4504-80e5-7a0b74469af5": [],
+    "c8705728-c908-4d7d-8eb5-ebfc60412a83": [],
+    "c3b97713-1a65-4fa6-8cd9-21ba4cc64562": [],
+    "899fd41f-509a-4683-b9ed-2e3116781198": [],
+    "4bd6e443-e035-402e-9ad2-9572ffabe0a4": [],
+    "c46ba2bb-bc43-47e0-9d21-1a8bd7322e03": [],
+    "9035bb58-a4cd-4441-9f72-dd665afdc668": [],
+    "90df14b1-29ce-4230-8c1f-d4d86b0d5b14": [],
+    "88f79757-eb20-43b7-8677-d6b3b359a5ed": [],
+    "12d7a857-55a3-47d4-8736-def2baa8b09b": [],
+    "fb1ad70c-d2f2-4ddf-b9a6-5876dea0abbf": [],
+    "8d75a42b-f8a5-4c4e-9b13-70a59bdb6097": [],
+    "8403c435-d45c-419a-a012-7ce77804206e": [],
+    "068e7f5a-faf1-41fd-9b49-1b832b3ef3b4": [],
+    "569b8f12-7b59-47fd-9c59-fe5343a875ef": [],
+    "4a8874c9-4bb2-402e-96ba-02c7f5da7aa6": [],
+    "93c1302c-3bbf-49be-843f-cb5c39a27151": [],
+    "f8c04aac-8f36-4943-b17f-02154f739d3e": [],
+    "0ec899c7-eb46-4a5b-90bc-61a2159a9805": [],
+    "1287e4ef-a314-420a-83dc-b7773b77b229": [],
+    "97ead4de-6262-4da6-aa8e-65b0d6142c53": [],
+    "5d75a047-d0f4-4a8e-bd66-6d7f38b161ba": [],
+    "4eb54d6c-07a5-42d2-b40b-c4d500f2c70c": [],
+    "4c1667df-26d0-47b1-afc8-b21ddfb420e8": [],
+    "13692c23-91fd-4473-85b9-07e99bea8b9e": [],
+    "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743": [
+      {
+        "memory_id": "7c3e29eb-6f52-4642-8ded-5f08e1fddd89",
+        "user_id": "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743",
+        "content": "User prefers Python examples.",
+        "created_at": "2026-08-07T17:42:54.240931+00:00"
+      },
+      {
+        "memory_id": "aad41942-9f11-41de-a31c-32be3a72f0bc",
+        "user_id": "cf7b7e14-bcdc-4a58-b4ad-5e4b0ff0a743",
+        "content": "User enjoys gardening.",
+        "created_at": "2026-08-07T17:42:54.259468+00:00"
+      }
+    ],
+    "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f": [
+      {
+        "memory_id": "186861a6-3714-4798-97ed-4bb753659348",
+        "user_id": "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T17:42:54.350536+00:00"
+      },
+      {
+        "memory_id": "1a5c4693-0074-418e-9bf3-c7b3619f1239",
+        "user_id": "c7070a35-4d6d-4ecc-9f83-c4744b0ffc6f",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T17:42:54.370401+00:00"
+      }
+    ],
+    "82a4c248-6270-4949-9085-302f73395949": [],
+    "497e5c71-ff38-4e17-9386-dace3387c8d6": [],
+    "074ce28c-8706-4e2d-9478-c69b896d0830": [],
+    "f3efb430-7d44-4fc4-a2bb-b7b989b7a9d1": [],
+    "2adf3d09-366e-49f9-b8cf-032838547797": [],
+    "72e5ea46-fb44-4010-99b4-084c0f8053ef": [],
+    "f088c456-0b48-486f-b083-e10a617c92ef": [],
+    "475c87bf-0a97-445f-ba8d-5ff89c5e693d": [],
+    "8c0db990-9b22-4787-a4ad-00fc59f4dbc9": [],
+    "7b49ea26-20fc-4be9-b7eb-f029113fd866": [],
+    "e3ff32a5-90b5-408c-9bac-6fb89eb7d89a": [],
+    "6bcde32b-576a-454c-8f2a-469875361920": [],
+    "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab": [
+      {
+        "memory_id": "529803ad-4765-4be6-b257-c9771b80da48",
+        "user_id": "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab",
+        "content": "User prefers Python examples.",
+        "created_at": "2026-08-07T17:43:57.801783+00:00"
+      },
+      {
+        "memory_id": "0265b383-70a8-48af-bfec-323b8eda6b4b",
+        "user_id": "2c70f1c4-781d-4fe4-b7f9-c788cb9851ab",
+        "content": "User enjoys gardening.",
+        "created_at": "2026-08-07T17:43:57.823439+00:00"
+      }
+    ],
+    "20295d6d-4a95-4914-8280-0ab3aade5fbb": [
+      {
+        "memory_id": "56706139-2625-4a94-8ba3-b522623d82cb",
+        "user_id": "20295d6d-4a95-4914-8280-0ab3aade5fbb",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T17:43:57.918830+00:00"
+      },
+      {
+        "memory_id": "d43d0c81-ceb4-4672-b812-a67b66fddb96",
+        "user_id": "20295d6d-4a95-4914-8280-0ab3aade5fbb",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T17:43:57.949185+00:00"
+      }
+    ],
+    "f8690d52-57aa-4691-b3ab-66ee8dc9cdd2": [],
+    "0785d695-0837-4357-8ceb-abd0cb3646d5": [],
+    "be8c7802-3413-4be6-bf3e-de9c0de5c55a": [],
+    "c5bbc493-cc97-4849-a1d4-1252ccd9607b": [],
+    "f43cd254-adab-4a2f-aa67-80292cbcb59d": [],
+    "cb283e15-478b-469e-a3f1-7b763b9ad808": [],
+    "4ddc8420-bb46-40a2-a06c-003723698edc": [],
+    "9d3ae713-5b90-4289-8d10-913bdc55f1d6": [],
+    "960a7e36-0ca4-4884-979c-c2777ee5bff3": [],
+    "ec495526-d1f0-40b5-9339-1a4e5d2e6470": [],
+    "67072e55-d02b-4c47-900a-76c2468cc5c3": [],
+    "3f849734-2bd0-4715-a68b-aee732d11f0c": [],
+    "f2202f49-042c-4f64-b125-7f5e080bc50f": [
+      {
+        "memory_id": "1d30b232-ceaa-47f1-b3e8-aa2492da21cb",
+        "user_id": "f2202f49-042c-4f64-b125-7f5e080bc50f",
+        "content": "User prefers Python examples.",
+        "created_at": "2026-08-07T18:08:57.212820+00:00"
+      },
+      {
+        "memory_id": "db3e8de0-394f-4d8f-93d5-eae115bf5d92",
+        "user_id": "f2202f49-042c-4f64-b125-7f5e080bc50f",
+        "content": "User enjoys gardening.",
+        "created_at": "2026-08-07T18:08:57.236134+00:00"
+      }
+    ],
+    "85a72c19-a343-4e85-8db5-7f4ad6c40e86": [
+      {
+        "memory_id": "0fd17a71-f24a-412e-a7db-352143d6a7e8",
+        "user_id": "85a72c19-a343-4e85-8db5-7f4ad6c40e86",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T18:08:57.314827+00:00"
+      },
+      {
+        "memory_id": "64c2cbed-26b5-4bfe-8345-4099f588e480",
+        "user_id": "85a72c19-a343-4e85-8db5-7f4ad6c40e86",
+        "content": "User prefers concise responses.",
+        "created_at": "2026-08-07T18:08:57.334063+00:00"
+      }
+    ]
+  }
+}

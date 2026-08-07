@@ -1,4 +1,4 @@
-openai
+groq
 pydantic
 pydantic-settings
 chromadb
