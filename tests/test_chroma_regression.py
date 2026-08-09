@@ -65,11 +65,23 @@ def test_chroma_persistence_across_retrievers(monkeypatch):
 
     orig_chroma_cls = vs_mod.ChromaVectorStore
 
-    def fake_chroma_ctor(dim, persist_directory=None, collection_name=None):
+    def fake_chroma_ctor(
+        dim,
+        persist_directory=None,
+        collection_name=None,
+        provider_id=None,
+    ):
         # Create a light wrapper object matching the required interface
         class Wrapper:
-            def __init__(self, dim, persist_directory=None, collection_name=None):
+            def __init__(
+                self,
+                dim,
+                persist_directory=None,
+                collection_name=None,
+                provider_id=None,
+                ):
                 self.dim = dim
+                self.provider_id = provider_id
                 self._client = FakeClient(persist_directory)
                 # create collection if absent
                 try:

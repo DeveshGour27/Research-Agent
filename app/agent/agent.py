@@ -26,6 +26,7 @@ from app.memory import (
     MemoryStore,
 )
 from app.tools.registry import ToolRegistry
+from app.agent.execution_context import AgentExecutionContext
 
 logger = get_logger(__name__)
 
@@ -117,6 +118,7 @@ class Agent(BaseAgent):
             if existing_messages
             else AgentLoop.initial_messages()
         )
+        self._context_agent_ids: dict[int, str] = {}
 
     @property
     def identity(self) -> AgentIdentity:
@@ -128,60 +130,131 @@ class Agent(BaseAgent):
         """Return the capabilities exposed by this agent implementation."""
         return self._capabilities
 
+    def _resolve_context_agent_name(self, context: AgentExecutionContext) -> str:
+        """Return a context-safe agent name for shared execution context."""
+        if context is None:
+            return self.identity.name
+
+        cached_name = self._context_agent_ids.get(id(context))
+        if cached_name is not None:
+            return cached_name
+
+        base_name = self.identity.name
+        existing_output = context.get_agent_output(base_name)
+
+        if existing_output is None:
+            self._context_agent_ids[id(context)] = base_name
+            return base_name
+
+        suffix = 2
+        while True:
+            candidate = f"{base_name}-{suffix}"
+            if context.get_agent_output(candidate) is None:
+                self._context_agent_ids[id(context)] = candidate
+                return candidate
+            suffix += 1
+
     def execute(self, request: AgentRequest) -> AgentResult:
         """Execute a structured agent request and return a structured result."""
         normalized_input = request.input_text.strip()
+
         if not normalized_input:
-           raise AgentExecutionError(
-               "Agent request input_text must not be empty.",
-               request=request,
-               details={"request_id": request.request_id},
-           )
+            raise AgentExecutionError(
+                "Agent request input_text must not be empty.",
+                request=request,
+                details={"request_id": request.request_id},
+            )
+
+        context = request.context
+
+        if context is None:
+            context = AgentExecutionContext(
+                task=normalized_input,
+                user_id=self.user_id,
+                chat_id=self.chat_id,
+            )
+
+        agent_name = self._resolve_context_agent_name(context)
+        if agent_name != self.identity.name:
+            self._identity = AgentIdentity(
+                name=agent_name,
+                version=self.identity.version,
+                description=self.identity.description,
+            )
+
+        context.mark_running()
 
         try:
-           state = self.run(normalized_input)
+            state = self.run(normalized_input)
+
         except AgentExecutionError:
-           raise
+            context.mark_failed()
+            raise
+
         except AgentError as error:
-           raise AgentExecutionError(
-               "Agent execution failed.",
-               request=request,
-               details={
-                   "request_id": request.request_id,
-                   "error_type": type(error).__name__,
-                   "message": str(error),
-               },
-           ) from error
+            context.mark_failed()
+
+            raise AgentExecutionError(
+                "Agent execution failed.",
+                request=request,
+                details={
+                    "request_id": request.request_id,
+                    "error_type": type(error).__name__,
+                    "message": str(error),
+                },
+            ) from error
+
         except Exception as error:  # pragma: no cover - defensive guard
-           raise AgentExecutionError(
-               "Unexpected agent execution failure.",
-               request=request,
-               details={
-                   "request_id": request.request_id,
-                   "error_type": type(error).__name__,
-                   "message": str(error),
-               },
-           ) from error
+            context.mark_failed()
+
+            raise AgentExecutionError(
+                "Unexpected agent execution failure.",
+                request=request,
+                details={
+                    "request_id": request.request_id,
+                    "error_type": type(error).__name__,
+                    "message": str(error),
+                },
+            ) from error
+
+        success = bool(
+            state.finished and state.final_answer is not None
+        )
+
+        result_metadata = {
+            "user_id": self.user_id,
+            "chat_id": self.chat_id,
+            "iterations": state.iteration,
+            "tool_calls": len(state.tool_calls),
+        }
+
+        context.publish_agent_output(
+            agent_id=self.identity.name,
+            output=state.final_answer,
+            success=success,
+            metadata=result_metadata,
+        )
+
+        if success:
+            context.mark_completed()
+        else:
+            context.mark_failed()
 
         return AgentResult(
-           request=request,
-           state=state,
-           output=state.final_answer,
-           success=bool(state.finished and state.final_answer is not None),
-           metadata={
-               "user_id": self.user_id,
-               "chat_id": self.chat_id,
-               "iterations": state.iteration,
-               "tool_calls": len(state.tool_calls),
-           },
+            request=request,
+            state=state,
+            output=state.final_answer,
+            success=success,
+            context=context,
+            metadata=result_metadata,
         )
 
     def run(self, user_input: str) -> AgentState:
         """Execute the agent loop for *user_input* and return final state.
- 
+
         Args:
             user_input: The user's question or instruction.
- 
+
         Returns:
             :class:`~app.agent.state.AgentState` containing the final answer,
             all tool calls made, their observations, and cumulative token usage.

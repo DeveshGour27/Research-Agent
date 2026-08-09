@@ -8,6 +8,7 @@ from typing import Any
 
 from app.agent.state import AgentState
 from app.exceptions import AgentError
+from app.agent.execution_context import AgentExecutionContext
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +37,7 @@ class AgentRequest:
     input_text: str
     metadata: dict[str, Any] = field(default_factory=dict)
     request_id: str | None = None
-
+    context: AgentExecutionContext | None = None
 
 @dataclass(slots=True)
 class AgentResult:
@@ -46,6 +47,7 @@ class AgentResult:
     state: AgentState
     output: str | None
     success: bool
+    context: AgentExecutionContext | None = None
     error: "AgentExecutionError | None" = None
     metadata: dict[str, Any] = field(default_factory=dict)
 

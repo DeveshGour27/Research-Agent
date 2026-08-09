@@ -38,8 +38,15 @@ def test_vector_store_factory_and_persistence(monkeypatch):
     store_data = {}
 
     class FakeChroma:
-        def __init__(self, dim, persist_directory=None, collection_name=None):
+        def __init__(
+            self,
+            dim,
+            persist_directory,
+            collection_name,
+            provider_id=None,
+        ):
             self.collection = collection_name or "default"
+            self.provider_id = provider_id
 
         def add_batch(self, ids, vectors, metadatas=None):
             store_data.setdefault(self.collection, {})
@@ -55,7 +62,16 @@ def test_vector_store_factory_and_persistence(monkeypatch):
             return out[:top_k]
 
     # Monkeypatch constructor
-    monkeypatch.setattr("rag.vector_store.ChromaVectorStore", lambda dim, persist_directory=None, collection_name=None: FakeChroma(dim, persist_directory, collection_name))
+    monkeypatch.setattr(
+            "rag.vector_store.ChromaVectorStore",
+            lambda dim, persist_directory=None, collection_name=None, provider_id=None:
+                FakeChroma(
+                    dim,
+                    persist_directory,
+                    collection_name,
+                    provider_id,
+                ),
+        )
 
     # Use Retriever with mock embeddings to avoid ST requirement
     r = Retriever(embedding_provider_name="mock")

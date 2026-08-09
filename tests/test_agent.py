@@ -13,6 +13,11 @@ from app.llm.groq_provider import GroqProvider
 from app.tools.base import BaseTool
 from app.tools.calculator import CalculatorTool
 from app.tools.registry import ToolRegistry
+from app.agent.contracts import AgentRequest
+from app.agent.execution_context import (
+    AgentExecutionContext,
+    ExecutionStatus,
+)
 
 
 class ScriptedProvider(LLMProvider):
@@ -337,3 +342,99 @@ def test_memory_context_deduplicates_duplicate_memories() -> None:
         and str(message.get("content")).startswith("Relevant user memories:")
     )
     assert memory_context.count("User prefers concise responses.") == 1
+
+
+def test_execute_creates_shared_execution_context() -> None:
+    provider = ScriptedProvider(
+        [LLMResponse(model="fake-model", content="Research complete.")]
+    )
+    agent = Agent(provider, _registry_with_calculator())
+
+    result = agent.execute(
+        AgentRequest(input_text="Research AI agents.")
+    )
+
+    assert result.success is True
+    assert result.context is not None
+    assert result.context.task == "Research AI agents."
+    assert result.context.status == ExecutionStatus.COMPLETED
+
+
+def test_execute_publishes_agent_output_to_context() -> None:
+    provider = ScriptedProvider(
+        [LLMResponse(model="fake-model", content="Research complete.")]
+    )
+    agent = Agent(provider, _registry_with_calculator())
+
+    context = AgentExecutionContext(
+        task="Research AI agents."
+    )
+
+    result = agent.execute(
+        AgentRequest(
+            input_text="Research AI agents.",
+            context=context,
+        )
+    )
+
+    assert result.context is context
+
+    published = context.get_agent_output(
+        agent.identity.name
+    )
+
+    assert published is not None
+    assert published.output == "Research complete."
+    assert published.success is True
+
+
+def test_multiple_agents_can_share_execution_context() -> None:
+    first_provider = ScriptedProvider(
+        [LLMResponse(model="fake-model", content="Research result.")]
+    )
+    second_provider = ScriptedProvider(
+        [LLMResponse(model="fake-model", content="Analysis result.")]
+    )
+
+    researcher = Agent(
+        first_provider,
+        _registry_with_calculator(),
+    )
+    analyst = Agent(
+        second_provider,
+        _registry_with_calculator(),
+    )
+
+    context = AgentExecutionContext(
+        task="Research and analyze AI agents."
+    )
+
+    researcher_result = researcher.execute(
+        AgentRequest(
+            input_text="Research AI agents.",
+            context=context,
+        )
+    )
+
+    analyst_result = analyst.execute(
+        AgentRequest(
+            input_text="Analyze the research.",
+            context=context,
+        )
+    )
+
+    assert researcher_result.context is context
+    assert analyst_result.context is context
+
+    research_output = context.get_agent_output(
+        researcher.identity.name
+    )
+    analysis_output = context.get_agent_output(
+        analyst.identity.name
+    )
+
+    assert research_output is not None
+    assert research_output.output == "Research result."
+
+    assert analysis_output is not None
+    assert analysis_output.output == "Analysis result."
