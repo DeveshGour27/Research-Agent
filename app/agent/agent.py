@@ -4,10 +4,18 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+from app.agent.contracts import (
+    AgentCapabilities,
+    AgentExecutionError,
+    AgentIdentity,
+    AgentRequest,
+    AgentResult,
+    BaseAgent,
+)
 from app.agent.loop import AgentLoop
 from app.agent.state import AgentState
 from app.config import settings
-from app.exceptions import MemoryReadError, MemoryWriteError
+from app.exceptions import AgentError, MemoryReadError, MemoryWriteError
 from app.llm.base import LLMProvider
 from app.llm.router import LLMRouter
 from app.logger import get_logger
@@ -26,7 +34,7 @@ _DEFAULT_MEMORY_TOP_K: int = settings.top_k_retrieval
 _MEMORY_CONTEXT_PREFIX: str = "Relevant user memories:"
 
 
-class Agent:
+class Agent(BaseAgent):
     """Create and run an agent that answers questions using tools.
 
     Args:
@@ -80,6 +88,18 @@ class Agent:
         self.user_id = (user_id or str(uuid4())).strip()
         self.chat_id = (chat_id or "default").strip() or "default"
 
+        self._identity = AgentIdentity(
+            name="production-research-agent",
+            version="1.0.0",
+            description="Production AI Research Agent",
+        )
+        self._capabilities = AgentCapabilities(
+            tool_use=True,
+            memory=True,
+            multi_turn=True,
+            retrieval=True,
+        )
+
         self._memory_store.create_user(user_id=self.user_id)
         self._memory_store.create_chat(
             self.user_id,
@@ -98,12 +118,70 @@ class Agent:
             else AgentLoop.initial_messages()
         )
 
+    @property
+    def identity(self) -> AgentIdentity:
+        """Return the stable identity for this agent instance."""
+        return self._identity
+
+    @property
+    def capabilities(self) -> AgentCapabilities:
+        """Return the capabilities exposed by this agent implementation."""
+        return self._capabilities
+
+    def execute(self, request: AgentRequest) -> AgentResult:
+        """Execute a structured agent request and return a structured result."""
+        normalized_input = request.input_text.strip()
+        if not normalized_input:
+           raise AgentExecutionError(
+               "Agent request input_text must not be empty.",
+               request=request,
+               details={"request_id": request.request_id},
+           )
+
+        try:
+           state = self.run(normalized_input)
+        except AgentExecutionError:
+           raise
+        except AgentError as error:
+           raise AgentExecutionError(
+               "Agent execution failed.",
+               request=request,
+               details={
+                   "request_id": request.request_id,
+                   "error_type": type(error).__name__,
+                   "message": str(error),
+               },
+           ) from error
+        except Exception as error:  # pragma: no cover - defensive guard
+           raise AgentExecutionError(
+               "Unexpected agent execution failure.",
+               request=request,
+               details={
+                   "request_id": request.request_id,
+                   "error_type": type(error).__name__,
+                   "message": str(error),
+               },
+           ) from error
+
+        return AgentResult(
+           request=request,
+           state=state,
+           output=state.final_answer,
+           success=bool(state.finished and state.final_answer is not None),
+           metadata={
+               "user_id": self.user_id,
+               "chat_id": self.chat_id,
+               "iterations": state.iteration,
+               "tool_calls": len(state.tool_calls),
+           },
+        )
+
     def run(self, user_input: str) -> AgentState:
         """Execute the agent loop for *user_input* and return final state.
-
+ 
         Args:
             user_input: The user's question or instruction.
-
+ 
         Returns:
             :class:`~app.agent.state.AgentState` containing the final answer,
             all tool calls made, their observations, and cumulative token usage.

@@ -128,6 +128,37 @@ class Settings(BaseSettings):
         gt=0,
         description="Number of chunks returned by the retriever.",
     )
+    # Feature flags and weights for the RAG pipeline
+    rag_enabled: bool = Field(
+        default=True, description="Enable the RAG pipeline features."
+    )
+    bm25_weight: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Weight for BM25 in hybrid scoring"
+    )
+    vector_weight: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Weight for vector similarity in hybrid scoring"
+    )
+    reranking_enabled: bool = Field(
+        default=True, description="Enable optional reranking after retrieval"
+    )
+    # Reranker selection: 'neural' | 'lexical' | 'noop'
+    reranker_type: str = Field(default="neural", description="Reranker type to use")
+    rewriting_enabled: bool = Field(
+        default=True, description="Enable query rewriting before retrieval"
+    )
+    decomposition_enabled: bool = Field(
+        default=True, description="Enable query decomposition into subqueries"
+    )
+    max_retrieval_iterations: int = Field(
+        default=3, gt=0, description="Maximum iterations for the agentic retrieval loop"
+    )
+    # Embedding provider selection
+    embedding_provider: str = Field(
+        default="sentence_transformers", description="Embedding provider: sentence_transformers|hashing|mock"
+    )
+    embedding_dim: int = Field(default=128, gt=1, description="Embedding dimension for hashing provider")
+    # Vector store backend
+    vector_store: str = Field(default="chroma", description="Vector store backend: chroma|inmemory")
 
     # ------------------------------------------------------------------ #
     # Resilience
