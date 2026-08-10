@@ -18,6 +18,7 @@ class AgentMessage:
     execution_id: str
     message_type: str = "information"
     message_id: str = field(default_factory=lambda: str(uuid4()))
+    correlation_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(
         default_factory=lambda: datetime.now(timezone.utc)
@@ -47,6 +48,7 @@ def create_agent_message(
     execution_id: str,
     content: str,
     message_type: str = "information",
+    correlation_id: str | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> AgentMessage:
     """Create a validated agent message."""
@@ -57,5 +59,6 @@ def create_agent_message(
         execution_id=execution_id,
         content=content,
         message_type=message_type,
+        correlation_id=correlation_id,
         metadata=dict(metadata or {}),
     )

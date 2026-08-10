@@ -17,6 +17,7 @@ class ExecutionStatus(str, Enum):
 
     CREATED = "created"
     RUNNING = "running"
+    EXECUTING = "executing"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -46,6 +47,7 @@ class AgentExecutionContext:
     execution_id: str = field(
         default_factory=lambda: str(uuid4())
     )
+    correlation_id: str | None = None
 
     status: ExecutionStatus = ExecutionStatus.CREATED
 
@@ -75,6 +77,10 @@ class AgentExecutionContext:
 
     def mark_running(self) -> None:
         self.status = ExecutionStatus.RUNNING
+        self._touch()
+
+    def mark_executing(self) -> None:
+        self.status = ExecutionStatus.EXECUTING
         self._touch()
 
     def mark_completed(self) -> None:

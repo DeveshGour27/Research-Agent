@@ -157,6 +157,10 @@ class PlanExecutionError(PlannerError):
     """Raised when a previously valid plan fails during execution."""
 
 
+class PlanValidationError(PlannerError):
+    """Raised when a plan fails structural validation."""
+
+
 # ------------------------------------------------------------------ #
 # Reflection
 # ------------------------------------------------------------------ #
@@ -215,3 +219,27 @@ class LLMResponseParseError(LLMError):
 
 class InputValidationError(AgentError):
     """Raised when user-supplied input fails validation before processing."""
+
+
+# ------------------------------------------------------------------ #
+# Agent Coordination
+# ------------------------------------------------------------------ #
+
+class AgentNotFoundError(AgentError):
+    """Raised when the Agent Registry cannot locate a requested agent by ID."""
+
+
+class RoutingError(AgentError):
+    """Raised when the Router cannot select an appropriate agent for a request."""
+
+
+class CommunicationError(AgentError):
+    """Raised when the Communicator fails to deliver a message or request due to transport/infrastructure issues."""
+
+
+class ContractValidationError(AgentError):
+    """Raised when an AgentRequest or AgentResult fails validation."""
+
+
+class ExecutionStateError(AgentError):
+    """Raised when an illegal execution lifecycle transition is attempted."""

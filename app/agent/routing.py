@@ -100,6 +100,10 @@ class CapabilityRouter(AgentRouter):
         scored_agents: list[tuple[int, int, BaseAgent]] = []
 
         for index, agent in enumerate(agents):
+            required_task_type = request.metadata.get("required_task_type")
+            if required_task_type and required_task_type not in agent.capabilities.task_types:
+                continue
+
             capability_score = self._capability_score(request, agent)
 
             if capability_score < 0:

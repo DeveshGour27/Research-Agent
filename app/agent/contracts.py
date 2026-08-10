@@ -28,6 +28,7 @@ class AgentCapabilities:
     memory: bool = True
     multi_turn: bool = True
     retrieval: bool = True
+    task_types: frozenset[str] = field(default_factory=frozenset)
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,8 @@ class AgentRequest:
     metadata: dict[str, Any] = field(default_factory=dict)
     request_id: str | None = None
     context: AgentExecutionContext | None = None
+    correlation_id: str | None = None
+    sender_id: str | None = None
 
 @dataclass(slots=True)
 class AgentResult:

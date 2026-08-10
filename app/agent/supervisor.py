@@ -1,10 +1,11 @@
-"""Supervisor/orchestrator for sequential multi-agent execution."""
+"""Supervisor/orchestrator for multi-agent execution with optional planning."""
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 from typing import Any
 
+from app.agent.communicator import AgentCommunicator
 from app.agent.contracts import (
     AgentCapabilities,
     AgentExecutionError,
@@ -15,29 +16,58 @@ from app.agent.contracts import (
 )
 from app.agent.delegation import AgentDelegation
 from app.agent.execution_context import AgentExecutionContext
+from app.agent.execution_policy import ExecutionPolicy
+from app.agent.executor import PlanExecutor
+from app.agent.plan import Plan, PlanStatus, StepResult
+from app.agent.planner import Planner
+from app.agent.registry import AgentRegistry
+from app.agent.replanning import ReplanningPolicy
+from app.agent.retry import RetryBoundary, RetryPolicy
 from app.agent.routing import AgentRouter, CapabilityRouter
 from app.agent.state import AgentState
+from app.agent.validator import PlanValidator
+from app.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Supervisor(BaseAgent):
     """
     Coordinate child agents through routing and structured delegation.
 
-    Execution remains sequential in Phase 5.3.
+    Supports two execution paths:
+    - Legacy (Phase 5.3/5.4): Sequential routing and delegation.
+    - Planning (Phase 5.5): Planner -> Validator -> Executor pipeline.
     """
 
     def __init__(
         self,
-        agents: Sequence[BaseAgent],
+        agents: Sequence[BaseAgent] | None = None,
         *,
         router: AgentRouter | None = None,
         max_attempts: int | None = None,
+        registry: AgentRegistry | None = None,
+        communicator: AgentCommunicator | None = None,
+        retry_policy: RetryPolicy | None = None,
+        planner: Planner | None = None,
+        plan_validator: PlanValidator | None = None,
+        plan_executor: PlanExecutor | None = None,
+        execution_policy: ExecutionPolicy | None = None,
     ) -> None:
-        if not agents:
-            raise ValueError("At least one child agent is required.")
+        if agents is None and registry is None:
+            raise ValueError("Either agents or registry must be provided.")
+        
+        if registry:
+            self._agents = registry.get_all()
+        else:
+            if not agents:
+                raise ValueError("At least one child agent is required.")
+            self._agents = list(agents)
 
-        self._agents = list(agents)
         self._router = router or CapabilityRouter()
+        self._registry = registry
+        self._communicator = communicator
+        self._retry_policy = retry_policy or RetryPolicy()
 
         if max_attempts is None:
             self._max_attempts = len(self._agents)
@@ -62,6 +92,12 @@ class Supervisor(BaseAgent):
             multi_turn=True,
             retrieval=False,
         )
+
+        # Phase 5.5: Planning stack (all optional for backward compat)
+        self._planner = planner
+        self._plan_validator = plan_validator or (PlanValidator() if planner else None)
+        self._plan_executor = plan_executor
+        self._execution_policy = execution_policy or ExecutionPolicy()
 
     @property
     def identity(self) -> AgentIdentity:
@@ -114,6 +150,142 @@ class Supervisor(BaseAgent):
 
         context.mark_running()
 
+        # Phase 5.5: Use planning path if planner and executor are provided
+        if self._planner and self._plan_executor:
+            return self._execute_with_planning(
+                request=request,
+                normalized_input=normalized_input,
+                context=context,
+            )
+
+        # Legacy Phase 5.3/5.4 sequential delegation path
+        return self._execute_legacy(
+            request=request,
+            normalized_input=normalized_input,
+            context=context,
+        )
+
+    def _execute_with_planning(
+        self,
+        *,
+        request: AgentRequest,
+        normalized_input: str,
+        context: AgentExecutionContext,
+    ) -> AgentResult:
+        """Execute via the Planner -> Validator -> Executor pipeline."""
+        assert self._planner is not None
+        assert self._plan_executor is not None
+
+        replanning_policy = ReplanningPolicy(self._execution_policy)
+        previous_plan: Plan | None = None
+        failure_context: list[StepResult] | None = None
+
+        while True:
+            # 1. Generate plan
+            plan = self._planner.generate_plan(
+                goal=normalized_input,
+                context=context,
+                previous_plan=previous_plan,
+                failure_context=failure_context,
+            )
+
+            logger.info(
+                "Plan generated",
+                extra={
+                    "plan_id": plan.plan_id,
+                    "step_count": len(plan.steps),
+                    "is_replan": previous_plan is not None,
+                },
+            )
+
+            # 2. Validate plan
+            if self._plan_validator:
+                self._plan_validator.validate(plan)
+
+            # 3. Execute plan
+            executed_plan = self._plan_executor.execute(
+                plan=plan,
+                context=context,
+                policy=self._execution_policy,
+            )
+
+            # 4. Check result
+            if executed_plan.status == PlanStatus.COMPLETED:
+                # Collect successful outputs
+                final_output = self._collect_plan_output(executed_plan)
+
+                state = AgentState()
+                state.finished = True
+                state.final_answer = final_output
+
+                context.mark_completed()
+
+                return AgentResult(
+                    request=request,
+                    state=state,
+                    output=final_output,
+                    success=True,
+                    context=context,
+                    metadata={
+                        "plan_id": executed_plan.plan_id,
+                        "steps_completed": sum(
+                            1 for s in executed_plan.steps.values()
+                            if s.result and s.result.success
+                        ),
+                    },
+                )
+
+            # 5. Plan failed — check replanning policy
+            if replanning_policy.should_replan(executed_plan):
+                replanning_policy.record_replan()
+                previous_plan = executed_plan
+                failure_context = [
+                    s.result for s in executed_plan.steps.values()
+                    if s.result and not s.result.success
+                ]
+                logger.info(
+                    "Replanning after failure",
+                    extra={
+                        "plan_id": executed_plan.plan_id,
+                        "replan_count": replanning_policy.replan_count,
+                    },
+                )
+                continue
+
+            # 6. No more replanning — terminal failure
+            context.mark_failed()
+
+            raise AgentExecutionError(
+                "Plan execution failed and replanning exhausted.",
+                request=request,
+                details={
+                    "plan_id": executed_plan.plan_id,
+                    "plan_status": executed_plan.status.value,
+                },
+            )
+
+    @staticmethod
+    def _collect_plan_output(plan: Plan) -> str:
+        """Collect output from completed plan steps."""
+        outputs: list[str] = []
+        for step in plan.steps.values():
+            if (
+                step.result
+                and step.result.success
+                and step.result.agent_result
+                and step.result.agent_result.output
+            ):
+                outputs.append(step.result.agent_result.output)
+        return "\n\n".join(outputs) if outputs else "Plan completed successfully."
+
+    def _execute_legacy(
+        self,
+        *,
+        request: AgentRequest,
+        normalized_input: str,
+        context: AgentExecutionContext,
+    ) -> AgentResult:
+        """Legacy Phase 5.3/5.4 sequential delegation path."""
         state = AgentState()
         state.messages.append(
             {
@@ -150,6 +322,8 @@ class Supervisor(BaseAgent):
                 },
                 request_id=request.request_id,
                 context=context,
+                correlation_id=context.correlation_id,
+                sender_id=self.identity.name,
             )
 
             child = self._router.select_agent(
@@ -180,10 +354,16 @@ class Supervisor(BaseAgent):
                 child=child,
             )
 
-            try:
-                child_result = child.execute(child_request)
+            context.mark_executing()
 
-            except AgentExecutionError as error:
+            try:
+                if self._communicator:
+                    retry_boundary = RetryBoundary(self._retry_policy, self._communicator)
+                    child_result = retry_boundary.send(child_request)
+                else:
+                    child_result = child.execute(child_request)
+
+            except Exception as error:
                 delegation.mark_failed(str(error))
 
                 context.publish_agent_output(
@@ -197,7 +377,14 @@ class Supervisor(BaseAgent):
                     },
                 )
 
-                last_error = error
+                if isinstance(error, AgentExecutionError):
+                    last_error = error
+                else:
+                    last_error = AgentExecutionError(
+                        f"Child agent execution failed: {error}",
+                        request=child_request,
+                        details={"original_error": type(error).__name__}
+                    )
                 continue
 
             if child_result.success and child_result.output is not None:
