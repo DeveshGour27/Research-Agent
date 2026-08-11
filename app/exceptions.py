@@ -243,3 +243,41 @@ class ContractValidationError(AgentError):
 
 class ExecutionStateError(AgentError):
     """Raised when an illegal execution lifecycle transition is attempted."""
+
+
+class AgentExecutionError(AgentError):
+    """
+    Raised when an agent cannot execute a request successfully.
+    This acts as a base for more specific failure categories while preserving backward compatibility.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        request: Any = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message, details={"request_id": request.request_id if request else None, **(details or {})})
+        self.request = request
+
+
+# ------------------------------------------------------------------ #
+# Phase 5.7: Multi-Agent Failure Categories
+# ------------------------------------------------------------------ #
+
+class RetryableError(AgentExecutionError):
+    """The operation failed in a way that may safely be retried."""
+
+class RecoverableError(AgentExecutionError):
+    """The operation failed but the supervisor may choose an alternative recovery path."""
+
+class FatalError(AgentExecutionError):
+    """The operation or system cannot safely recover."""
+
+class AgentTimeoutError(AgentExecutionError):
+    """A bounded execution exceeded its allowed time."""
+
+class AgentCancellationError(AgentExecutionError):
+    """The execution was explicitly cancelled."""
+

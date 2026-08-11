@@ -25,6 +25,7 @@ class PlanStatus(str, Enum):
     PENDING = "pending"
     EXECUTING = "executing"
     COMPLETED = "completed"
+    PARTIAL_SUCCESS = "partial_success"
     FAILED = "failed"
 
 
@@ -53,6 +54,7 @@ class PlanStep:
     dependencies: tuple[str, ...] = field(default_factory=tuple)
     status: PlanStepStatus = PlanStepStatus.PENDING
     result: StepResult | None = None
+    is_required: bool = True
 
 
 @dataclass(slots=True)

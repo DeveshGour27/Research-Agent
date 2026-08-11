@@ -360,12 +360,54 @@ Planned additions include:
 - Evaluation Framework
 - Observability Dashboard
 - Cloud Deployment
-- Authentication
-- Web Interface
+
+
+
+# 10. Multi-Agent Failure Handling, Recovery & Resilience
+
+Phase 5.7 introduces robust mechanisms to isolate and recover from failures in a multi-agent environment without compromising security boundaries or determinism.
+
+## Failure Taxonomy
+Exceptions inherit from `AgentExecutionError` to preserve backward compatibility:
+- **RetryableError**: Operations that can safely be retried (e.g. transient network failures).
+- **RecoverableError**: Failures that require the supervisor to decide an alternative path (e.g. handoff failure, target agent failure).
+- **FatalError**: Non-recoverable failures that immediately abort the execution.
+- **AgentTimeoutError**: Bounded execution exceeded.
+- **AgentCancellationError**: The operation was explicitly cancelled.
+
+## Execution States and Transitions
+The `ExecutionStatus` tracks the lifecycle of an agent's execution within `AgentExecutionContext`:
+- `CREATED` → `RUNNING` → `EXECUTING`
+- Terminal states: `COMPLETED`, `PARTIAL_SUCCESS`, `FAILED`, `CANCELLED`, `TIMED_OUT`
+
+## Required vs Optional Tasks & Partial Success
+Tasks define an `is_required` attribute. A workflow may achieve `PARTIAL_SUCCESS` if all required tasks complete successfully, even if optional tasks fail. If a required task fails, the entire workflow is marked as `FAILED`.
+
+## Retry Semantics & Failure Budgets
+The `RetryPolicy` and `RetryBoundary` enforce resilience natively:
+- **Max Attempts**: Maximum retries for a single transient failure.
+- **Max Repeated Failures**: Circuit protection against infinite retry loops.
+- **Max Failures per Task**: Bounds failures allocated to a specific task across a session.
+Only retryable exceptions are retried; fatal errors immediately abort.
+
+## Timeout and Cancellation Semantics
+Timeout and cancellation state are explicitly propagated via `AgentExecutionContext`. 
+- **Timeouts** explicitly set `TIMED_OUT` status and raise `AgentTimeoutError`.
+- **Cancellations** set `CANCELLED` status and raise `AgentCancellationError`.
+Descendant agents and nested collaborations monitor their context and gracefully abort when these signals are active.
+
+## Collaboration Failure Handling
+`CollaborationSession` strictly bounds peer-to-peer interactions. Failures such as rejected handoffs, target agent timeouts, or invalid results are caught and raised as `RecoverableError`. Infinite agent loops are prevented using failure budgets.
+
+## Recovery Authority
+The supervisor retains exclusive authority over workflow-level recovery decisions. Agents may retry transient errors locally but cannot redefine or override supervisor-level fallback policies.
+
+## Security Implications
+Resilience mechanisms do not bypass established contracts, capabilities validation, or authorization boundaries. Errors are logged securely using structured observability without leaking credentials, sensitive prompt data, or API keys.
 
 ---
 
-# 10. Architecture Decisions
+# 11. Architecture Decisions
 
 Decision | Reason
 -------- | ------
@@ -377,10 +419,12 @@ Reflection module | Higher answer quality
 Prompt directory | Easier prompt management
 Config file | Centralized configuration
 Groq model fallback | Preserve chat availability for rate limits, timeouts, and server failures without coupling business services to Groq
+Failure Taxonomy (Phase 5.7) | Granular error handling without breaking legacy `AgentExecutionError` contracts
+Bounded Circuit Protection (Phase 5.7) | Built natively into `RetryPolicy` rather than introducing heavyweight distributed circuit-breakers
 
 ---
 
-# 11. Out of Scope
+# 12. Out of Scope
 
 The following are intentionally excluded from Version 1:
 

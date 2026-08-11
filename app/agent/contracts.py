@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from app.agent.state import AgentState
-from app.exceptions import AgentError
+from app.exceptions import AgentError, AgentExecutionError
 from app.agent.execution_context import AgentExecutionContext
 
 
@@ -41,6 +41,17 @@ class AgentRequest:
     context: AgentExecutionContext | None = None
     correlation_id: str | None = None
     sender_id: str | None = None
+    is_required: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class CollaborationRequest:
+    """A request from a worker agent to initiate a collaboration session."""
+
+    requested_task_type: str
+    message: str
+    metadata: dict[str, Any] = field(default_factory=dict)
+    is_required: bool = True
 
 @dataclass(slots=True)
 class AgentResult:
@@ -53,20 +64,9 @@ class AgentResult:
     context: AgentExecutionContext | None = None
     error: "AgentExecutionError | None" = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    collaboration_request: CollaborationRequest | None = None
 
 
-class AgentExecutionError(AgentError):
-    """Raised when an agent cannot execute a request successfully."""
-
-    def __init__(
-        self,
-        message: str,
-        *,
-        request: AgentRequest | None = None,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message, details=details or {})
-        self.request = request
 
 
 class BaseAgent(ABC):

@@ -10,7 +10,8 @@ from app.agent.plan import Plan, PlanStatus, PlanStep, PlanStepStatus, StepResul
 from app.agent.registry import AgentRegistry
 from app.agent.retry import RetryBoundary, RetryPolicy
 from app.agent.routing import AgentRouter, CapabilityRouter
-from app.exceptions import PlanExecutionError
+from app.agent.collaboration import CollaborationSession
+from app.exceptions import PlanExecutionError, AgentCancellationError, AgentTimeoutError
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -62,6 +63,15 @@ class PlanExecutor:
         failures = 0
 
         while True:
+            if context.is_cancelled:
+                logger.info("execution_cancelled", extra={"plan_id": plan.plan_id})
+                plan.status = PlanStatus.FAILED
+                raise AgentCancellationError("Execution cancelled via context.", request=None)
+            if context.is_timed_out:
+                logger.info("execution_timed_out", extra={"plan_id": plan.plan_id})
+                plan.status = PlanStatus.FAILED
+                raise AgentTimeoutError("Execution timed out via context.", request=None)
+
             ready_steps = [
                 step for step in plan.steps.values()
                 if step.status == PlanStepStatus.READY
@@ -117,7 +127,20 @@ class PlanExecutor:
             s.status == PlanStepStatus.COMPLETED
             for s in plan.steps.values()
         )
-        plan.status = PlanStatus.COMPLETED if all_completed else PlanStatus.FAILED
+        
+        if all_completed:
+            plan.status = PlanStatus.COMPLETED
+        else:
+            required_failed = any(
+                s.is_required and s.status == PlanStepStatus.FAILED
+                for s in plan.steps.values()
+            )
+            if required_failed:
+                plan.status = PlanStatus.FAILED
+                logger.info("execution_failed", extra={"plan_id": plan.plan_id})
+            else:
+                plan.status = PlanStatus.PARTIAL_SUCCESS
+                logger.info("partial_success", extra={"plan_id": plan.plan_id})
 
         return plan
 
@@ -173,29 +196,19 @@ class PlanExecutor:
             correlation_id=context.correlation_id,
         )
 
-        agents = self._registry.get_all()
-        selected_agent = self._router.select_agent(request, agents)
-
-        if selected_agent is None:
-            logger.warning(
-                "No agent found for step",
-                extra={
-                    "plan_id": plan.plan_id,
-                    "step_id": step.step_id,
-                    "task_type": step.task_type,
-                },
-            )
-            return StepResult(
-                step_id=step.step_id,
-                success=False,
-                error=f"No suitable agent found for step '{step.step_id}'.",
-            )
-
-        request.metadata["selected_agent"] = selected_agent.identity.name
-
         try:
-            retry_boundary = RetryBoundary(self._retry_policy, self._communicator)
-            agent_result = retry_boundary.send(request)
+            # Phase 5.6: Step execution delegates to CollaborationSession
+            # which handles router, retry, and handoffs
+            session = CollaborationSession(
+                step_id=step.step_id,
+                initial_request=request,
+                router=self._router,
+                registry=self._registry,
+                communicator=self._communicator,
+                retry_policy=self._retry_policy,
+            )
+            
+            agent_result = session.execute()
 
             return StepResult(
                 step_id=step.step_id,

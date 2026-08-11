@@ -11,6 +11,10 @@ from uuid import uuid4
 from app.agent.delegation import AgentDelegation
 from app.agent.messaging import AgentMessage
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.agent.collaboration import Artifact
+
 
 class ExecutionStatus(str, Enum):
     """Lifecycle status of a shared agent execution."""
@@ -19,7 +23,10 @@ class ExecutionStatus(str, Enum):
     RUNNING = "running"
     EXECUTING = "executing"
     COMPLETED = "completed"
+    PARTIAL_SUCCESS = "partial_success"
     FAILED = "failed"
+    CANCELLED = "cancelled"
+    TIMED_OUT = "timed_out"
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,16 +93,54 @@ class AgentExecutionContext:
     def mark_completed(self) -> None:
         self.status = ExecutionStatus.COMPLETED
         self._touch()
+        
+    def mark_partial_success(self) -> None:
+        self.status = ExecutionStatus.PARTIAL_SUCCESS
+        self._touch()
 
     def mark_failed(self) -> None:
         self.status = ExecutionStatus.FAILED
         self._touch()
 
+    def mark_cancelled(self) -> None:
+        self.status = ExecutionStatus.CANCELLED
+        self._touch()
+        
+    def mark_timed_out(self) -> None:
+        self.status = ExecutionStatus.TIMED_OUT
+        self._touch()
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.status == ExecutionStatus.CANCELLED
+        
+    @property
+    def is_timed_out(self) -> bool:
+        return self.status == ExecutionStatus.TIMED_OUT
+
+    def publish_artifact(self, artifact: "Artifact") -> None:
+        """Publish an immutable structured Artifact to the context."""
+        
+        normalized_key = artifact.artifact_id.strip()
+        
+        if not normalized_key:
+            raise ValueError("Artifact ID must not be empty.")
+            
+        if normalized_key in self.artifacts:
+            raise ValueError(f"Artifact ID '{normalized_key}' already exists. Artifacts are immutable.")
+            
+        self.artifacts[normalized_key] = artifact
+        self._touch()
+        
     def set_artifact(self, key: str, value: Any) -> None:
         normalized_key = key.strip()
 
         if not normalized_key:
             raise ValueError("Artifact key must not be empty.")
+
+        if normalized_key in self.artifacts:
+            # For strict immutability, we must prevent standard `set_artifact` overwrites too
+            raise ValueError(f"Artifact key '{normalized_key}' already exists. Artifacts are immutable.")
 
         self.artifacts[normalized_key] = value
         self._touch()

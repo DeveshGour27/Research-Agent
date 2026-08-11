@@ -6,14 +6,15 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.agent.communicator import AgentCommunicator
+from app.exceptions import AgentCancellationError, AgentTimeoutError
 from app.agent.contracts import (
     AgentCapabilities,
-    AgentExecutionError,
     AgentIdentity,
     AgentRequest,
     AgentResult,
     BaseAgent,
 )
+from app.exceptions import AgentExecutionError
 from app.agent.delegation import AgentDelegation
 from app.agent.execution_context import AgentExecutionContext
 from app.agent.execution_policy import ExecutionPolicy
@@ -210,15 +211,21 @@ class Supervisor(BaseAgent):
             )
 
             # 4. Check result
-            if executed_plan.status == PlanStatus.COMPLETED:
+            if executed_plan.status in (PlanStatus.COMPLETED, PlanStatus.PARTIAL_SUCCESS):
                 # Collect successful outputs
                 final_output = self._collect_plan_output(executed_plan)
 
                 state = AgentState()
                 state.finished = True
                 state.final_answer = final_output
+                
+                is_partial = executed_plan.status == PlanStatus.PARTIAL_SUCCESS
 
-                context.mark_completed()
+                if is_partial:
+                    context.mark_partial_success()
+                    logger.info("partial_success", extra={"plan_id": executed_plan.plan_id})
+                else:
+                    context.mark_completed()
 
                 return AgentResult(
                     request=request,
@@ -232,6 +239,7 @@ class Supervisor(BaseAgent):
                             1 for s in executed_plan.steps.values()
                             if s.result and s.result.success
                         ),
+                        "partial_success": is_partial,
                     },
                 )
 
@@ -254,6 +262,7 @@ class Supervisor(BaseAgent):
 
             # 6. No more replanning — terminal failure
             context.mark_failed()
+            logger.info("execution_failed", extra={"plan_id": executed_plan.plan_id})
 
             raise AgentExecutionError(
                 "Plan execution failed and replanning exhausted.",
@@ -305,6 +314,13 @@ class Supervisor(BaseAgent):
         )
 
         for attempt in range(attempts):
+            if context.is_cancelled:
+                logger.info("agent_cancelled", extra={"request_id": request.request_id})
+                raise AgentCancellationError("Supervisor execution cancelled via context.", request=request)
+            if context.is_timed_out:
+                logger.info("agent_timeout", extra={"request_id": request.request_id})
+                raise AgentTimeoutError("Supervisor execution timed out via context.", request=request)
+
             remaining_agents = [
                 agent
                 for agent in self._agents
@@ -364,6 +380,7 @@ class Supervisor(BaseAgent):
                     child_result = child.execute(child_request)
 
             except Exception as error:
+                logger.info("agent_failed", extra={"agent_id": child.identity.name, "error_type": type(error).__name__})
                 delegation.mark_failed(str(error))
 
                 context.publish_agent_output(
@@ -388,6 +405,7 @@ class Supervisor(BaseAgent):
                 continue
 
             if child_result.success and child_result.output is not None:
+                logger.info("execution_recovered", extra={"agent_id": child.identity.name, "attempt": attempt + 1}) if attempt > 0 else None
                 delegation.mark_completed(child_result.output)
 
                 state.iteration = attempt + 1
