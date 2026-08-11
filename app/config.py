@@ -170,6 +170,28 @@ class Settings(BaseSettings):
     )
 
     # ------------------------------------------------------------------ #
+    # Tools
+    # ------------------------------------------------------------------ #
+    web_search_provider: str = Field(
+        default="tavily",
+        description="Provider used for the WebSearchTool (e.g., tavily).",
+    )
+    web_search_api_key: str = Field(
+        default="",
+        description="API key for the web search provider. Must not be logged.",
+    )
+    web_search_timeout_seconds: float = Field(
+        default=10.0,
+        gt=0.0,
+        description="Timeout for a single web search API request in seconds.",
+    )
+    web_search_max_results: int = Field(
+        default=5,
+        gt=0,
+        description="Maximum number of search results to return.",
+    )
+
+    # ------------------------------------------------------------------ #
     # Pydantic-settings meta
     # ------------------------------------------------------------------ #
     model_config = SettingsConfigDict(
