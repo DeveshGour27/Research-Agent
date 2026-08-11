@@ -13,8 +13,18 @@ from app.agent.routing import AgentRouter, CapabilityRouter
 from app.agent.collaboration import CollaborationSession
 from app.exceptions import PlanExecutionError, AgentCancellationError, AgentTimeoutError
 from app.logger import get_logger
+from app.observability.tracer import extract_span_info
+from app.observability import events as obs_events
 
 logger = get_logger(__name__)
+
+
+def _emit_safe(event: obs_events.BaseEvent) -> None:
+    """Emit an observability event, swallowing any failure."""
+    try:
+        event.emit()
+    except Exception:
+        pass
 
 
 class PlanExecutor:
@@ -59,6 +69,15 @@ class PlanExecutor:
         plan.status = PlanStatus.EXECUTING
         self._initialize_ready_steps(plan)
 
+        # Phase 5.8: Emit execution-started event
+        span = extract_span_info(context)
+        if span:
+            _emit_safe(obs_events.AgentExecutionStartedEvent(
+                trace_id=span.trace_id, run_id=span.run_id,
+                span_id=span.span_id, parent_span_id=span.parent_span_id,
+                agent_name="PlanExecutor", input_text=plan.goal,
+            ))
+
         steps_executed = 0
         failures = 0
 
@@ -66,10 +85,22 @@ class PlanExecutor:
             if context.is_cancelled:
                 logger.info("execution_cancelled", extra={"plan_id": plan.plan_id})
                 plan.status = PlanStatus.FAILED
+                if span:
+                    _emit_safe(obs_events.TimeoutCancellationEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        reason="cancelled",
+                    ))
                 raise AgentCancellationError("Execution cancelled via context.", request=None)
             if context.is_timed_out:
                 logger.info("execution_timed_out", extra={"plan_id": plan.plan_id})
                 plan.status = PlanStatus.FAILED
+                if span:
+                    _emit_safe(obs_events.TimeoutCancellationEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        reason="timed_out",
+                    ))
                 raise AgentTimeoutError("Execution timed out via context.", request=None)
 
             ready_steps = [
@@ -97,6 +128,12 @@ class PlanExecutor:
                         },
                     )
                     plan.status = PlanStatus.FAILED
+                    if span:
+                        _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            agent_name="PlanExecutor", success=False, output="Max steps reached",
+                        ))
                     return plan
 
                 if failures >= policy.max_failures:
@@ -109,6 +146,12 @@ class PlanExecutor:
                         },
                     )
                     plan.status = PlanStatus.FAILED
+                    if span:
+                        _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            agent_name="PlanExecutor", success=False, output="Max failures reached",
+                        ))
                     return plan
 
                 step_result = self._execute_step(step, plan, context)
@@ -118,10 +161,24 @@ class PlanExecutor:
                     step.status = PlanStepStatus.COMPLETED
                     step.result = step_result
                     self._unlock_dependents(step.step_id, plan)
+                    # Phase 5.8: step completed event
+                    if span:
+                        _emit_safe(obs_events.PlanStepCompletedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            plan_id=plan.plan_id, step_id=step.step_id, status="completed",
+                        ))
                 else:
                     step.status = PlanStepStatus.FAILED
                     step.result = step_result
                     failures += 1
+                    # Phase 5.8: step failed event
+                    if span:
+                        _emit_safe(obs_events.PlanStepCompletedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            plan_id=plan.plan_id, step_id=step.step_id, status="failed",
+                        ))
 
         all_completed = all(
             s.status == PlanStepStatus.COMPLETED
@@ -130,6 +187,12 @@ class PlanExecutor:
         
         if all_completed:
             plan.status = PlanStatus.COMPLETED
+            if span:
+                _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                    trace_id=span.trace_id, run_id=span.run_id,
+                    span_id=span.span_id, parent_span_id=span.parent_span_id,
+                    agent_name="PlanExecutor", success=True, output=None,
+                ))
         else:
             required_failed = any(
                 s.is_required and s.status == PlanStepStatus.FAILED
@@ -138,9 +201,21 @@ class PlanExecutor:
             if required_failed:
                 plan.status = PlanStatus.FAILED
                 logger.info("execution_failed", extra={"plan_id": plan.plan_id})
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name="PlanExecutor", success=False, output="required_step_failed",
+                    ))
             else:
                 plan.status = PlanStatus.PARTIAL_SUCCESS
                 logger.info("partial_success", extra={"plan_id": plan.plan_id})
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name="PlanExecutor", success=True, output="partial_success",
+                    ))
 
         return plan
 

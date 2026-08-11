@@ -82,6 +82,44 @@ class AgentExecutionContext:
         default_factory=lambda: datetime.now(timezone.utc)
     )
 
+    # Phase 5.8: Tracing identifiers.
+    # These are deliberately separate from execution_id and correlation_id.
+    # execution_id identifies the shared execution context instance.
+    # correlation_id is an optional user-supplied or supervisor-supplied correlator.
+    # trace_id groups all spans within a single top-level user request.
+    # run_id identifies one execution run within the trace.
+    # span_id identifies this specific execution unit within the run.
+    # parent_span_id links to the parent execution unit.
+    trace_id: str = field(default_factory=lambda: str(uuid4()))
+    run_id: str = field(default_factory=lambda: str(uuid4()))
+    span_id: str = field(default_factory=lambda: str(uuid4()))
+    parent_span_id: str | None = None
+
+    def create_child_span(self, *, task: str) -> "AgentExecutionContext":
+        """Create a child execution context that inherits the trace lineage.
+
+        The child receives:
+        - The same ``trace_id`` and ``run_id`` (same logical trace).
+        - A new ``span_id`` (its own execution unit).
+        - ``parent_span_id`` set to this context's ``span_id``.
+        - Fresh mutable collections (no shared state).
+        - Its own ``execution_id`` (new context instance).
+        - Inherited scalar fields: ``user_id``, ``chat_id``, ``correlation_id``.
+
+        The child starts in CREATED status. Cancellation and timeout state
+        are NOT copied — the existing architecture propagates those signals
+        through the authoritative shared context object, not through copies.
+        """
+        return AgentExecutionContext(
+            task=task,
+            user_id=self.user_id,
+            chat_id=self.chat_id,
+            correlation_id=self.correlation_id,
+            trace_id=self.trace_id,
+            run_id=self.run_id,
+            parent_span_id=self.span_id,
+        )
+
     def mark_running(self) -> None:
         self.status = ExecutionStatus.RUNNING
         self._touch()

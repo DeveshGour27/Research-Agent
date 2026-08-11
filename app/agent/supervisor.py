@@ -28,8 +28,18 @@ from app.agent.routing import AgentRouter, CapabilityRouter
 from app.agent.state import AgentState
 from app.agent.validator import PlanValidator
 from app.logger import get_logger
+from app.observability.tracer import extract_span_info
+from app.observability import events as obs_events
 
 logger = get_logger(__name__)
+
+
+def _emit_safe(event: obs_events.BaseEvent) -> None:
+    """Emit an observability event, swallowing any failure."""
+    try:
+        event.emit()
+    except Exception:
+        pass
 
 
 class Supervisor(BaseAgent):
@@ -151,6 +161,15 @@ class Supervisor(BaseAgent):
 
         context.mark_running()
 
+        # Phase 5.8: Emit execution-started event
+        span = extract_span_info(context)
+        if span:
+            _emit_safe(obs_events.AgentExecutionStartedEvent(
+                trace_id=span.trace_id, run_id=span.run_id,
+                span_id=span.span_id, parent_span_id=span.parent_span_id,
+                agent_name=self.identity.name, input_text=normalized_input,
+            ))
+
         # Phase 5.5: Use planning path if planner and executor are provided
         if self._planner and self._plan_executor:
             return self._execute_with_planning(
@@ -177,6 +196,7 @@ class Supervisor(BaseAgent):
         assert self._planner is not None
         assert self._plan_executor is not None
 
+        span = extract_span_info(context)
         replanning_policy = ReplanningPolicy(self._execution_policy)
         previous_plan: Plan | None = None
         failure_context: list[StepResult] | None = None
@@ -198,6 +218,15 @@ class Supervisor(BaseAgent):
                     "is_replan": previous_plan is not None,
                 },
             )
+
+            # Phase 5.8: plan generated event
+            if span:
+                _emit_safe(obs_events.PlanGeneratedEvent(
+                    trace_id=span.trace_id, run_id=span.run_id,
+                    span_id=span.span_id, parent_span_id=span.parent_span_id,
+                    plan_id=plan.plan_id, step_count=len(plan.steps),
+                    is_replan=previous_plan is not None,
+                ))
 
             # 2. Validate plan
             if self._plan_validator:
@@ -226,6 +255,15 @@ class Supervisor(BaseAgent):
                     logger.info("partial_success", extra={"plan_id": executed_plan.plan_id})
                 else:
                     context.mark_completed()
+
+                # Phase 5.8: execution completed event
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name=self.identity.name, success=True,
+                        output="partial_success" if is_partial else "completed",
+                    ))
 
                 return AgentResult(
                     request=request,
@@ -258,11 +296,28 @@ class Supervisor(BaseAgent):
                         "replan_count": replanning_policy.replan_count,
                     },
                 )
+
+                # Phase 5.8: retry event for replanning
+                if span:
+                    _emit_safe(obs_events.RetryAttemptedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        error_type="PlanFailed", attempt_number=replanning_policy.replan_count,
+                    ))
                 continue
 
             # 6. No more replanning — terminal failure
             context.mark_failed()
             logger.info("execution_failed", extra={"plan_id": executed_plan.plan_id})
+
+            # Phase 5.8: execution failed event
+            if span:
+                _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                    trace_id=span.trace_id, run_id=span.run_id,
+                    span_id=span.span_id, parent_span_id=span.parent_span_id,
+                    agent_name=self.identity.name, success=False,
+                    output="replanning_exhausted",
+                ))
 
             raise AgentExecutionError(
                 "Plan execution failed and replanning exhausted.",
@@ -305,6 +360,7 @@ class Supervisor(BaseAgent):
         state.finished = False
         state.final_answer = None
 
+        span = extract_span_info(context)
         last_error: AgentExecutionError | None = None
         attempted_agents: set[str] = set()
 
@@ -316,9 +372,21 @@ class Supervisor(BaseAgent):
         for attempt in range(attempts):
             if context.is_cancelled:
                 logger.info("agent_cancelled", extra={"request_id": request.request_id})
+                if span:
+                    _emit_safe(obs_events.TimeoutCancellationEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        reason="cancelled",
+                    ))
                 raise AgentCancellationError("Supervisor execution cancelled via context.", request=request)
             if context.is_timed_out:
                 logger.info("agent_timeout", extra={"request_id": request.request_id})
+                if span:
+                    _emit_safe(obs_events.TimeoutCancellationEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        reason="timed_out",
+                    ))
                 raise AgentTimeoutError("Supervisor execution timed out via context.", request=request)
 
             remaining_agents = [
@@ -383,6 +451,15 @@ class Supervisor(BaseAgent):
                 logger.info("agent_failed", extra={"agent_id": child.identity.name, "error_type": type(error).__name__})
                 delegation.mark_failed(str(error))
 
+                # Phase 5.8: agent failure event
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name=child.identity.name, success=False,
+                        output=type(error).__name__,
+                    ))
+
                 context.publish_agent_output(
                     agent_id=child.identity.name,
                     output=None,
@@ -402,6 +479,16 @@ class Supervisor(BaseAgent):
                         request=child_request,
                         details={"original_error": type(error).__name__}
                     )
+
+                # Phase 5.8: retry event (supervisor is about to try next agent)
+                if attempt + 1 < attempts:
+                    if span:
+                        _emit_safe(obs_events.RetryAttemptedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            error_type=type(error).__name__,
+                            attempt_number=attempt + 1,
+                        ))
                 continue
 
             if child_result.success and child_result.output is not None:
@@ -433,6 +520,15 @@ class Supervisor(BaseAgent):
                 )
 
                 context.mark_completed()
+
+                # Phase 5.8: success event
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name=self.identity.name, success=True,
+                        output=None,
+                    ))
 
                 return AgentResult(
                     request=request,
@@ -473,6 +569,15 @@ class Supervisor(BaseAgent):
         state.final_answer = None
 
         context.mark_failed()
+
+        # Phase 5.8: terminal failure event
+        if span:
+            _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                trace_id=span.trace_id, run_id=span.run_id,
+                span_id=span.span_id, parent_span_id=span.parent_span_id,
+                agent_name=self.identity.name, success=False,
+                output="all_agents_exhausted",
+            ))
 
         if last_error is not None:
             raise last_error

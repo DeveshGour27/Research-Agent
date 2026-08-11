@@ -12,6 +12,16 @@ from app.agent.registry import AgentRegistry
 from app.agent.retry import RetryBoundary, RetryPolicy
 from app.agent.communicator import AgentCommunicator
 from app.exceptions import AgentTimeoutError, AgentCancellationError, FatalError, RecoverableError
+from app.observability.tracer import extract_span_info
+from app.observability import events as obs_events
+
+
+def _emit_safe(event: obs_events.BaseEvent) -> None:
+    """Emit an observability event, swallowing any failure."""
+    try:
+        event.emit()
+    except Exception:
+        pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,12 +94,25 @@ class CollaborationSession:
         current_request = self.initial_request
         last_result = None
         context = current_request.context
+        span = extract_span_info(context)
 
         while True:
             if context:
                 if context.is_cancelled:
+                    if span:
+                        _emit_safe(obs_events.TimeoutCancellationEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            reason="collaboration_cancelled",
+                        ))
                     raise AgentCancellationError("Collaboration session cancelled via context.", request=current_request)
                 if context.is_timed_out:
+                    if span:
+                        _emit_safe(obs_events.TimeoutCancellationEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            reason="collaboration_timed_out",
+                        ))
                     raise AgentTimeoutError("Collaboration session timed out via context.", request=current_request)
 
             if self.steps_taken >= self._policy.max_collaboration_steps:
@@ -132,9 +155,25 @@ class CollaborationSession:
                 # Target agent timed out
                 if context:
                     context.publish_agent_output(agent_name, None, False, {"error": "timeout"})
+                # Phase 5.8: handoff failure event
+                if span:
+                    _emit_safe(obs_events.HandoffResolvedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        target_task_type=agent_name, success=False,
+                        messages_exchanged=self.messages_exchanged,
+                    ))
                 raise RecoverableError(f"Target agent {agent_name} timed out.", request=current_request) from error
             except AgentExecutionError as error:
                 # Target agent failed (could be handoff rejected or invalid result)
+                # Phase 5.8: handoff failure event
+                if span:
+                    _emit_safe(obs_events.HandoffResolvedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        target_task_type=agent_name, success=False,
+                        messages_exchanged=self.messages_exchanged,
+                    ))
                 raise RecoverableError(f"Target agent {agent_name} execution failed.", request=current_request) from error
             
             last_result = result
@@ -143,6 +182,15 @@ class CollaborationSession:
             # 3. Check for CollaborationRequest (Handoff / Messaging)
             if result.collaboration_request:
                 self.messages_exchanged += 1
+
+                # Phase 5.8: handoff initiated event
+                if span:
+                    _emit_safe(obs_events.HandoffInitiatedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        target_task_type=result.collaboration_request.requested_task_type,
+                        message=result.collaboration_request.message,
+                    ))
                 
                 # Advance request to target agent
                 current_request = AgentRequest(
@@ -158,6 +206,14 @@ class CollaborationSession:
                 continue
                 
             # If no collaboration request, this agent has finished the step
+            # Phase 5.8: handoff resolved event (successful completion)
+            if span:
+                _emit_safe(obs_events.HandoffResolvedEvent(
+                    trace_id=span.trace_id, run_id=span.run_id,
+                    span_id=span.span_id, parent_span_id=span.parent_span_id,
+                    target_task_type=agent_name, success=True,
+                    messages_exchanged=self.messages_exchanged,
+                ))
             break
             
         assert last_result is not None
