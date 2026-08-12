@@ -680,9 +680,9 @@ class Retriever:
         rerank: bool = True,
     ) -> List[Retrieved]:
 
-        top_k = (
+        final_k = (
             top_k
-            or settings.top_k_retrieval
+            or settings.top_k_final
         )
 
         # =====================================================
@@ -692,7 +692,7 @@ class Retriever:
         if not hybrid:
             vector_results = self._vector_search(
                 query,
-                top_k,
+                settings.top_k_retrieval,
                 user_id=user_id,
             )
 
@@ -714,7 +714,7 @@ class Retriever:
         else:
             vector_results = self._vector_search(
                 query,
-                top_k=top_k * 3,
+                top_k=settings.top_k_retrieval,
                 user_id=user_id,
             )
 
@@ -724,7 +724,7 @@ class Retriever:
 
             bm25_results = self._bm25_search(
                 query,
-                top_k=top_k * 3,
+                top_k=settings.top_k_retrieval,
                 user_id=user_id,
             )
 
@@ -767,7 +767,7 @@ class Retriever:
                         metadata=item[2] or {},
                     )
                     for item in vector_results[
-                        :top_k
+                        :settings.top_k_rerank
                     ]
                 ]
 
@@ -791,7 +791,7 @@ class Retriever:
                         "vector_weight",
                         0.5,
                     ),
-                    top_k=top_k,
+                    top_k=settings.top_k_rerank,
                 )
 
         # =====================================================
@@ -802,7 +802,8 @@ class Retriever:
             not rerank
             or not self.reranker
         ):
-            return results
+            # No reranking: return hybrid results up to final_k
+            return results[:final_k]
 
         # =====================================================
         # PREPARE RERANKER INPUT
@@ -872,9 +873,14 @@ class Retriever:
 
         for item in reranked:
             chunk_id = item[0]
-            rerank_score = float(
-                item[1]
-            )
+            
+            # entry_score can be None if the LLM provided only ordering
+            entry_score = item[1]
+            if entry_score is not None:
+                rerank_score = float(entry_score)
+            else:
+                rerank_score = None
+
             metadata = item[2] or {}
 
             original = original_by_id.get(
@@ -885,10 +891,13 @@ class Retriever:
                 final_results.append(
                     Retrieved(
                         chunk_id=chunk_id,
-                        score=rerank_score,
+                        # compatibility: if we have a rerank_score, use it; else fallback to hybrid_score
+                        score=rerank_score if rerank_score is not None else original.hybrid_score,
                         source_score=original.source_score,
                         vector_score=original.vector_score,
                         metadata=metadata,
+                        hybrid_score=original.hybrid_score,
+                        rerank_score=rerank_score,
                     )
                 )
 
@@ -896,14 +905,27 @@ class Retriever:
                 final_results.append(
                     Retrieved(
                         chunk_id=chunk_id,
-                        score=rerank_score,
+                        score=rerank_score if rerank_score is not None else 0.0,
                         source_score=0.0,
                         vector_score=0.0,
                         metadata=metadata,
+                        hybrid_score=0.0,
+                        rerank_score=rerank_score,
                     )
                 )
 
-        return final_results
+        # ---------------------------------------------------------
+        # DETERMINISTIC FINAL ORDERING
+        # ---------------------------------------------------------
+        final_results.sort(
+            key=lambda item: (
+                -item.rerank_score if item.rerank_score is not None else float("inf"),
+                -item.hybrid_score,
+                item.chunk_id
+            )
+        )
+
+        return final_results[:final_k]
 
     def agentic_retrieval_loop(
         self,

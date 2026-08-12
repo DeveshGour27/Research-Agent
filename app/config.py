@@ -173,9 +173,19 @@ class Settings(BaseSettings):
         description="Overlap in tokens between adjacent chunks.",
     )
     top_k_retrieval: int = Field(
-        default=5,
+        default=50,
         gt=0,
-        description="Number of chunks returned by the retriever.",
+        description="Number of candidates returned by each retrieval branch (vector and lexical).",
+    )
+    top_k_rerank: int = Field(
+        default=50,
+        gt=0,
+        description="Maximum number of candidates passed to the reranker.",
+    )
+    top_k_final: int = Field(
+        default=10,
+        gt=0,
+        description="Final number of items returned to the user.",
     )
     # Feature flags and weights for the RAG pipeline
     rag_enabled: bool = Field(
@@ -297,6 +307,17 @@ class Settings(BaseSettings):
                 raise ValueError("GROQ_API_KEY must be set in production environment.")
             if self.database_url.startswith("sqlite"):
                 raise ValueError("DATABASE_URL must not be SQLite in production environment.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_top_k_hierarchy(self) -> "Settings":
+        """Ensure retrieval flow candidates decrease strictly."""
+        if not (self.top_k_retrieval >= self.top_k_rerank >= self.top_k_final > 0):
+            raise ValueError(
+                f"Invalid top-k hierarchy: retrieval ({self.top_k_retrieval}) "
+                f">= rerank ({self.top_k_rerank}) "
+                f">= final ({self.top_k_final}) > 0 must hold."
+            )
         return self
 
 

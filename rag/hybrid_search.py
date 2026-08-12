@@ -8,7 +8,7 @@ Responsibilities:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 
@@ -20,6 +20,8 @@ class Retrieved:
     source_score: float
     vector_score: float
     metadata: dict
+    hybrid_score: float = 0.0
+    rerank_score: Optional[float] = None
 
 
 def combine_scores(bm25_results: List[Tuple[str, float, dict]],
@@ -63,7 +65,14 @@ def combine_scores(bm25_results: List[Tuple[str, float, dict]],
         score = bm25_weight * bscore + vector_weight * vscore
         # prefer bm25 metadata when available, otherwise use vector metadata
         metadata = bm25_meta.get(cid) if cid in bm25_meta else vec_meta.get(cid, {})
-        results.append(Retrieved(chunk_id=cid, score=score, source_score=bscore, vector_score=vscore, metadata=metadata))
+        results.append(Retrieved(
+            chunk_id=cid,
+            score=score,
+            source_score=bscore,
+            vector_score=vscore,
+            metadata=metadata,
+            hybrid_score=score
+        ))
 
     results.sort(key=lambda r: r.score, reverse=True)
     return results[:top_k]

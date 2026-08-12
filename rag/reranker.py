@@ -206,7 +206,7 @@ class Reranker(ABC):
             Tuple[str, float, dict]
         ],
     ) -> List[
-        Tuple[str, float, dict]
+        Tuple[str, Optional[float], dict]
     ]:
         """
         Return candidates reordered by relevance.
@@ -239,7 +239,7 @@ class LexicalReranker(Reranker):
             Tuple[str, float, dict]
         ],
     ) -> List[
-        Tuple[str, float, dict]
+        Tuple[str, Optional[float], dict]
     ]:
         items = list(items)
 
@@ -276,9 +276,13 @@ class LexicalReranker(Reranker):
                 )
             )
 
+        # Tie-breaking: rerank_score DESC -> hybrid_score DESC -> chunk_id ASC
         scored.sort(
-            key=lambda item: item[1],
-            reverse=True,
+            key=lambda item: (
+                -item[1],
+                -item[2].get("hybrid_score", 0.0),
+                item[0]
+            )
         )
 
         return scored
@@ -317,12 +321,6 @@ class NeuralReranker(Reranker):
             -> append omitted candidates in original order
     """
 
-    def __init__(
-        self,
-        top_k: int = 10,
-    ):
-        self.top_k = int(top_k)
-
     def rerank(
         self,
         query: str,
@@ -330,7 +328,7 @@ class NeuralReranker(Reranker):
             Tuple[str, float, dict]
         ],
     ) -> List[
-        Tuple[str, float, dict]
+        Tuple[str, Optional[float], dict]
     ]:
         from app.config import settings
         from app.llm.factory import (
@@ -341,12 +339,10 @@ class NeuralReranker(Reranker):
 
         logger = get_logger(__name__)
 
-        items = list(items)
+        candidates = list(items)
 
-        if not items:
+        if not candidates:
             return []
-
-        candidates = items[: self.top_k]
 
         try:
             provider = create_chat_provider(
@@ -424,30 +420,6 @@ class NeuralReranker(Reranker):
             # ---------------------------------------------------------
             # Parse JSON robustly: support raw JSON, JSON inside ``` fences,
             # or a JSON array appearing somewhere in surrounding text.
-            #
-            # NOTE on a real bug this replaces: the previous fallback used
-            # a single greedy regex `r"(\[.*\])"` to grab "the" array
-            # substring. Greedy `.*` spans from the FIRST '[' to the LAST
-            # ']' in the *entire* response, so if the model's output
-            # contains more than one bracket group anywhere -- a leading
-            # acknowledgement, an echoed example, trailing commentary --
-            # the regex merges unrelated bracket groups into one blob that
-            # is not valid JSON. That reproduces the exact
-            # "invalid or unparsable JSON" failure with a payload as
-            # simple as:
-            #
-            #   Sure, e.g. format is ["a","b"]. Actual ranking: ["id2","id1"]
-            #
-            # `_extract_json_arrays` below instead does a bracket-depth
-            # scan to find every *complete, balanced* top-level `[...]`
-            # substring, then tries each candidate (starting with the
-            # last -- the real answer normally comes after any preamble),
-            # with two bounded, deterministic repairs applied only as a
-            # last resort per candidate: stripping a trailing comma before
-            # a closing bracket (a common benign LLM formatting slip) and,
-            # if that still fails, `ast.literal_eval` (safe -- no code
-            # execution) to recover single-quoted Python-literal-style
-            # lists some models emit instead of strict JSON.
             # ---------------------------------------------------------
 
             import json
@@ -467,8 +439,6 @@ class NeuralReranker(Reranker):
                 ranked_ids = _extract_fenced_json(content)
 
             # 3) Bracket-depth scan for complete top-level array substrings
-            #    anywhere in the text (handles preamble/trailing prose
-            #    without merging unrelated bracket groups).
             if ranked_ids is None:
                 ranked_ids = _extract_json_arrays(content)
 
@@ -485,12 +455,6 @@ class NeuralReranker(Reranker):
 
             # ---------------------------------------------------------
             # Unwrap a JSON-object envelope, e.g. {"ranking": [...]}.
-            #
-            # Some providers/configurations (JSON-mode / structured
-            # output) require a JSON *object* at the root and will not
-            # emit a bare top-level array even when asked to. Only a
-            # small set of conventional key names is accepted; anything
-            # else is treated as genuinely invalid rather than guessed at.
             # ---------------------------------------------------------
 
             if isinstance(ranked_ids, dict):
@@ -535,27 +499,11 @@ class NeuralReranker(Reranker):
 
             # ---------------------------------------------------------
             # Validate IDs
-            #
-            # Two response shapes are accepted for each array entry:
-            #
-            #   1) a plain ID string:            "id2"
-            #   2) a ranking object:              {"id": "id2", "score": 0.9}
-            #
-            # "score" on a ranking object is optional. When present it must
-            # be numeric (bool is explicitly excluded, since bool is a
-            # subclass of int in Python) or the score is ignored and the
-            # candidate's original retrieval score is kept instead.
-            #
-            # Any entry that is malformed (wrong type, missing/invalid
-            # "id", references an unknown candidate ID, or repeats an ID
-            # already seen) is skipped rather than failing the whole
-            # response -- this mirrors the existing "unknown ID" and
-            # "duplicate ID" handling below.
             # ---------------------------------------------------------
 
             id_map = {item[0]: item for item in candidates}
 
-            ranked: List[Tuple[str, float, dict]] = []
+            ranked: List[Tuple[str, Optional[float], dict]] = []
             seen = set()
 
             for entry in ranked_ids:
@@ -586,9 +534,7 @@ class NeuralReranker(Reranker):
                         ):
                             logger.warning(
                                 "LLM reranker returned a non-numeric "
-                                "score for id %s; ignoring the score "
-                                "and keeping the original retrieval "
-                                "score.",
+                                "score for id %s; ignoring the score.",
                                 rid,
                             )
                         else:
@@ -616,23 +562,21 @@ class NeuralReranker(Reranker):
 
                 chunk_id, original_score, metadata = id_map[rid]
 
-                final_score = (
-                    entry_score
-                    if entry_score is not None
-                    else original_score
-                )
+                # Semantic score mapping:
+                # If a valid numeric score was provided, use it.
+                # Otherwise, rerank_score is explicitly None, signifying NO score.
+                final_score = entry_score
 
                 ranked.append(
                     (chunk_id, final_score, metadata)
                 )
 
-            # Append any omitted candidates in original retrieval order
+            # Append any omitted candidates
             for item in candidates:
                 if item[0] not in seen:
-                    ranked.append(item)
-
-            # Include remaining items beyond top_k preserving original order
-            ranked.extend(items[self.top_k :])
+                    # original item[1] is hybrid score. But for rerank output,
+                    # we must return rerank_score=None when no score is given.
+                    ranked.append((item[0], None, item[2]))
 
             if not ranked:
                 logger.warning(
@@ -657,7 +601,7 @@ class NeuralReranker(Reranker):
             # and therefore remains deterministic.
             return LexicalReranker().rerank(
                 query,
-                items,
+                candidates,
             )
 
 
@@ -677,6 +621,6 @@ class NoopReranker(Reranker):
             Tuple[str, float, dict]
         ],
     ) -> List[
-        Tuple[str, float, dict]
+        Tuple[str, Optional[float], dict]
     ]:
         return list(items)

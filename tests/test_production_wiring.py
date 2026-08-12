@@ -111,7 +111,7 @@ def test_reranker_wiring_and_fallback(monkeypatch):
     from app.llm.factory import create_chat_provider
 
     monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: (_ for _ in ()).throw(Exception("fail")))
-    nr = NeuralReranker(top_k=5)
+    nr = NeuralReranker()
     items = [("id1", 0.1, {"text": "alpha beta"}), ("id2", 0.2, {"text": "beta gamma alpha"})]
     out = nr.rerank("alpha", items)
     # Should fallback to lexical ordering (BM25-like) — ensure output is list of tuples

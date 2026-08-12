@@ -29,7 +29,7 @@ def test_neural_reranker_with_fake_provider(monkeypatch):
     monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: fake)
 
     items = [("id1", 0.1, {"text": "alpha beta"}), ("id2", 0.2, {"text": "beta gamma alpha"})]
-    nr = NeuralReranker(top_k=5)
+    nr = NeuralReranker()
     out = nr.rerank("alpha query", items)
     assert [o[0] for o in out][:2] == ranked
 

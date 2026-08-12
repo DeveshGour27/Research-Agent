@@ -35,7 +35,7 @@ def make_items():
 ])
 def test_neural_reranker_parsing_and_ordering(monkeypatch, content, expected_order):
     monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: FakeProvider(content))
-    nr = NeuralReranker(top_k=3)
+    nr = NeuralReranker()
     items = make_items()
     out = nr.rerank("query", items)
     assert [o[0] for o in out] == expected_order
@@ -44,7 +44,7 @@ def test_neural_reranker_parsing_and_ordering(monkeypatch, content, expected_ord
 def test_neural_reranker_empty_or_invalid(monkeypatch):
     # empty -> fallback
     monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: FakeProvider(""))
-    nr = NeuralReranker(top_k=3)
+    nr = NeuralReranker()
     items = make_items()
     out = nr.rerank("query", items)
     assert set(o[0] for o in out) == set(i[0] for i in items)
