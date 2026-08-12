@@ -15,6 +15,16 @@ from app.logger import get_logger
 from app.memory import JsonFileMemoryStore
 from app.tools import ToolRegistry
 from app.tools.calculator import CalculatorTool
+from app.agent.registry import AgentRegistry
+from app.agent.routing import CapabilityRouter
+from app.agent.communicator import InProcessCommunicator
+from app.agent.llm_planner import LLMPlanner
+from app.agent.executor import PlanExecutor
+from app.agent.specialized.web_agent import WebResearchAgent
+from app.agent.specialized.rag_agent import RAGAgent
+from app.agent.supervisor import Supervisor
+from app.agent.contracts import AgentRequest
+from app.agent.execution_context import AgentExecutionContext
 
 
 logger = get_logger(__name__)
@@ -158,14 +168,90 @@ def run_agent() -> None:
         logger.info("Agent CLI stopped", extra={"turns": turns})
 
 
+def run_supervisor() -> None:
+    """Run the interactive Supervisor loop with Phase 6 planning architecture."""
+    provider = create_chat_provider(settings)
+    registry = AgentRegistry()
+    registry.register(WebResearchAgent())
+    registry.register(RAGAgent())
+
+    communicator = InProcessCommunicator(registry)
+    plan_executor = PlanExecutor(
+        router=CapabilityRouter(),
+        registry=registry,
+        communicator=communicator,
+    )
+    planner = LLMPlanner(provider=provider)
+
+    supervisor = Supervisor(
+        registry=registry,
+        planner=planner,
+        plan_executor=plan_executor,
+    )
+
+    logger.info(
+        "Supervisor CLI started",
+        extra={"provider": settings.llm_provider, "model": settings.llm_model},
+    )
+    print("Research Agent (Supervisor mode). Type 'exit' or 'quit' to end.")
+
+    turns = 0
+    try:
+        while True:
+            try:
+                user_input = input("You: ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not user_input:
+                continue
+            if user_input.casefold() in CLI_EXIT_COMMANDS:
+                break
+
+            context = AgentExecutionContext(task=user_input)
+            request = AgentRequest(input_text=user_input, context=context)
+
+            try:
+                result = supervisor.execute(request)
+            except AgentError as error:
+                logger.exception(
+                    "Supervisor request failed",
+                    extra={"error_type": type(error).__name__},
+                )
+                print(f"Unable to generate a response: {error}")
+                continue
+
+            turns += 1
+            if result.success:
+                print(f"Agent: {result.output}")
+            else:
+                print(f"Agent failed: {result.output or 'Unknown error'}")
+
+    finally:
+        logger.info("Supervisor CLI stopped", extra={"turns": turns})
+
+
+def run_api() -> None:
+    """Run the FastAPI HTTP server using uvicorn."""
+    import uvicorn
+    logger.info("API server starting", extra={"host": "127.0.0.1", "port": 8000})
+    print("Starting FastAPI service on http://127.0.0.1:8000 (OpenAPI docs: http://127.0.0.1:8000/docs)")
+    uvicorn.run("app.main_api:app", host="127.0.0.1", port=8000, reload=False)
+
+
 def main() -> int:
     """Start the CLI and return a process exit code."""
     try:
-        mode = input("Mode [agent/chat] (default: agent): ").strip().casefold()
+        mode = input("Mode [agent/chat/supervisor/api] (default: agent): ").strip().casefold()
         if mode in {"", "agent", "a"}:
             run_agent()
         elif mode in {"chat", "c"}:
             run_chat()
+        elif mode in {"supervisor", "s"}:
+            run_supervisor()
+        elif mode in {"api", "web", "http"}:
+            run_api()
         else:
             print("Unknown mode. Starting agent mode.")
             run_agent()

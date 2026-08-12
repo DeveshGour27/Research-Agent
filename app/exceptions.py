@@ -281,3 +281,26 @@ class AgentTimeoutError(AgentExecutionError):
 class AgentCancellationError(AgentExecutionError):
     """The execution was explicitly cancelled."""
 
+
+class InvalidStateTransitionError(AgentError):
+    """Raised when an invalid job state transition is attempted."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        current_state: str,
+        target_state: str,
+        job_id: str | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            details={
+                "current_state": current_state,
+                "target_state": target_state,
+                "job_id": job_id,
+            },
+        )
+        self.current_state = current_state
+        self.target_state = target_state
+

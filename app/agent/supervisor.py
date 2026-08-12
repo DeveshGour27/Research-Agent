@@ -203,34 +203,63 @@ class Supervisor(BaseAgent):
 
         while True:
             # 1. Generate plan
-            plan = self._planner.generate_plan(
-                goal=normalized_input,
-                context=context,
-                previous_plan=previous_plan,
-                failure_context=failure_context,
-            )
+            from app.exceptions import PlanCreationError, PlanValidationError
+            try:
+                plan = self._planner.generate_plan(
+                    goal=normalized_input,
+                    context=context,
+                    previous_plan=previous_plan,
+                    failure_context=failure_context,
+                )
 
-            logger.info(
-                "Plan generated",
-                extra={
-                    "plan_id": plan.plan_id,
-                    "step_count": len(plan.steps),
-                    "is_replan": previous_plan is not None,
-                },
-            )
+                logger.info(
+                    "Plan generated",
+                    extra={
+                        "plan_id": plan.plan_id,
+                        "step_count": len(plan.steps),
+                        "is_replan": previous_plan is not None,
+                    },
+                )
 
-            # Phase 5.8: plan generated event
-            if span:
-                _emit_safe(obs_events.PlanGeneratedEvent(
-                    trace_id=span.trace_id, run_id=span.run_id,
-                    span_id=span.span_id, parent_span_id=span.parent_span_id,
-                    plan_id=plan.plan_id, step_count=len(plan.steps),
-                    is_replan=previous_plan is not None,
-                ))
+                # Phase 5.8: plan generated event
+                if span:
+                    _emit_safe(obs_events.PlanGeneratedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        plan_id=plan.plan_id, step_count=len(plan.steps),
+                        is_replan=previous_plan is not None,
+                    ))
 
-            # 2. Validate plan
-            if self._plan_validator:
-                self._plan_validator.validate(plan)
+                # 2. Validate plan
+                if self._plan_validator:
+                    self._plan_validator.validate(plan)
+            except (PlanCreationError, PlanValidationError) as e:
+                # If we cannot even generate or validate a structurally sound plan, fail execution deterministically
+                logger.error(f"Plan generation failed: {e}")
+                
+                # Phase 5.8: execution completed event
+                if span:
+                    _emit_safe(obs_events.AgentExecutionCompletedEvent(
+                        trace_id=span.trace_id, run_id=span.run_id,
+                        span_id=span.span_id, parent_span_id=span.parent_span_id,
+                        agent_name=self.identity.name, success=False,
+                        output="plan_generation_failed",
+                    ))
+                    
+                state = AgentState()
+                state.finished = True
+                return AgentResult(
+                    request=request,
+                    state=state,
+                    output=None,
+                    success=False,
+                    context=context,
+                    error=AgentExecutionError(
+                        "Plan generation failed.",
+                        request=request,
+                        details={"error_type": type(e).__name__, "message": str(e)},
+                    ),
+                )
 
             # 3. Execute plan
             executed_plan = self._plan_executor.execute(
@@ -278,6 +307,7 @@ class Supervisor(BaseAgent):
                             if s.result and s.result.success
                         ),
                         "partial_success": is_partial,
+                        "executed_plan": executed_plan,
                     },
                 )
 
@@ -325,6 +355,7 @@ class Supervisor(BaseAgent):
                 details={
                     "plan_id": executed_plan.plan_id,
                     "plan_status": executed_plan.status.value,
+                    "executed_plan": executed_plan,
                 },
             )
 

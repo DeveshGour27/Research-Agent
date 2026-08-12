@@ -50,8 +50,15 @@ class RAGAgent(BaseAgent):
                 request=request,
             )
 
+        user_id = request.context.user_id if request.context else None
+        if not user_id:
+            raise AgentExecutionError(
+                "user_id is required for RAG retrieval.",
+                request=request,
+            )
+
         try:
-            results = self._retriever.retrieve(query=normalized_input)
+            results = self._retriever.retrieve(query=normalized_input, user_id=user_id)
             
             # Serialize the retrieval results deterministically
             serialized_results = []

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -97,6 +97,55 @@ class Settings(BaseSettings):
         default=LogLevel.INFO,
         description="Minimum log level emitted by the application.",
     )
+    database_url: str = Field(
+        default="sqlite:///./memory/jobs.db",
+        description="Database connection string for relational persistence.",
+    )
+    max_concurrent_jobs: int = Field(
+        default=10,
+        gt=0,
+        description="Maximum number of concurrently running background jobs.",
+    )
+    job_timeout_seconds: float = Field(
+        default=300.0,
+        gt=0.0,
+        description="Execution timeout in seconds for a single research job.",
+    )
+    worker_id: str | None = Field(
+        default=None,
+        description="Unique identifier for this application instance. If not provided, a UUID will be generated.",
+    )
+    job_heartbeat_interval_seconds: int = Field(
+        default=10,
+        gt=0,
+        description="Interval in seconds for a running job to update its heartbeat.",
+    )
+    job_stale_after_seconds: int = Field(
+        default=60,
+        gt=0,
+        description="Threshold in seconds before a job without a heartbeat is considered stale.",
+    )
+    job_recovery_poll_interval_seconds: int = Field(
+        default=15,
+        gt=0,
+        description="Interval in seconds to poll for stale running jobs to recover.",
+    )
+    job_max_attempts: int = Field(
+        default=3,
+        gt=0,
+        description="Maximum number of execution attempts for a job.",
+    )
+
+    api_rate_limit_requests: int = Field(
+        default=60,
+        gt=0,
+        description="Maximum API requests per user within the rate-limit window.",
+    )
+    api_rate_limit_window_seconds: int = Field(
+        default=60,
+        gt=0,
+        description="Rate-limit sliding window duration in seconds.",
+    )
 
     # ------------------------------------------------------------------ #
     # Vector database
@@ -151,6 +200,15 @@ class Settings(BaseSettings):
     )
     max_retrieval_iterations: int = Field(
         default=3, gt=0, description="Maximum iterations for the agentic retrieval loop"
+    )
+    
+    # ------------------------------------------------------------------ #
+    # Planning
+    # ------------------------------------------------------------------ #
+    max_plan_steps: int = Field(
+        default=10,
+        gt=0,
+        description="Maximum number of steps permitted in an LLM-generated plan.",
     )
     # Embedding provider selection
     embedding_provider: str = Field(
@@ -230,6 +288,16 @@ class Settings(BaseSettings):
                 f"chunk_overlap ({overlap}) must be less than chunk_size ({chunk_size})."
             )
         return overlap
+
+    @model_validator(mode="after")
+    def validate_production_secrets(self) -> "Settings":
+        """Strictly enforce that production environments have required secrets."""
+        if self.environment == Environment.PRODUCTION:
+            if not self.groq_api_key:
+                raise ValueError("GROQ_API_KEY must be set in production environment.")
+            if self.database_url.startswith("sqlite"):
+                raise ValueError("DATABASE_URL must not be SQLite in production environment.")
+        return self
 
 
 # Single application-wide instance.

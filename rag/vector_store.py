@@ -167,6 +167,8 @@ class InMemoryVectorStore:
         self,
         vector: np.ndarray,
         top_k: int = 5,
+        *,
+        user_id: str,
     ) -> List[Tuple[str, float, dict]]:
         vector = np.asarray(
             vector,
@@ -184,6 +186,9 @@ class InMemoryVectorStore:
         results = []
 
         for item_id, item in self._items.items():
+            if item.metadata.get("user_id") != user_id:
+                continue
+
             score = self._cosine_similarity(
                 vector,
                 item.vector,
@@ -213,7 +218,7 @@ class InMemoryVectorStore:
     def all_ids(self) -> List[str]:
         return list(self._items.keys())
 
-    def all_items(self) -> List[Tuple[str, dict]]:
+    def all_items(self, user_id: str) -> List[Tuple[str, dict]]:
         """
         Return all stored IDs and metadata.
         """
@@ -223,6 +228,7 @@ class InMemoryVectorStore:
                 dict(item.metadata),
             )
             for item_id, item in self._items.items()
+            if item.metadata.get("user_id") == user_id
         ]
 
     def size(self) -> int:
@@ -414,6 +420,8 @@ class ChromaVectorStore:
         self,
         vector: np.ndarray,
         top_k: int = 5,
+        *,
+        user_id: str,
     ) -> List[Tuple[str, float, dict]]:
         vector = np.asarray(
             vector,
@@ -451,6 +459,7 @@ class ChromaVectorStore:
                 vector.tolist()
             ],
             n_results=top_k,
+            where={"user_id": user_id},
             include=[
                 "metadatas",
                 "distances",
@@ -676,7 +685,7 @@ class ChromaVectorStore:
         except Exception:
             return []
 
-    def all_items(self) -> List[Tuple[str, dict]]:
+    def all_items(self, user_id: str) -> List[Tuple[str, dict]]:
         """
         Return all persisted IDs and metadata.
 
@@ -685,6 +694,7 @@ class ChromaVectorStore:
         """
         try:
             result = self._collection.get(
+                where={"user_id": user_id},
                 include=[
                     "metadatas",
                     "documents",

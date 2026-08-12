@@ -32,12 +32,12 @@ def test_rag_agent_successful_retrieval() -> None:
     ]
 
     agent = RAGAgent(retriever=mock_retriever)
-    context = AgentExecutionContext(task="Find something")
+    context = AgentExecutionContext(task="Find something", user_id="test_user")
     request = AgentRequest(input_text="What is X?", context=context)
     
     result = agent.execute(request)
 
-    mock_retriever.retrieve.assert_called_once_with(query="What is X?")
+    mock_retriever.retrieve.assert_called_once_with(query="What is X?", user_id="test_user")
     assert result.success is True
     assert result.request is request
     assert result.context is context
@@ -52,7 +52,8 @@ def test_rag_agent_empty_retrieval() -> None:
     mock_retriever.retrieve.return_value = []
 
     agent = RAGAgent(retriever=mock_retriever)
-    request = AgentRequest(input_text="Unknown topic")
+    context = AgentExecutionContext(task="Find something", user_id="test_user")
+    request = AgentRequest(input_text="Unknown topic", context=context)
     result = agent.execute(request)
 
     assert result.success is True
@@ -63,7 +64,8 @@ def test_rag_agent_retrieval_failure() -> None:
     mock_retriever.retrieve.side_effect = Exception("Database connection lost")
 
     agent = RAGAgent(retriever=mock_retriever)
-    request = AgentRequest(input_text="Query")
+    context = AgentExecutionContext(task="Find something", user_id="test_user")
+    request = AgentRequest(input_text="Query", context=context)
     
     result = agent.execute(request)
     
@@ -76,4 +78,10 @@ def test_rag_agent_empty_input() -> None:
     agent = RAGAgent(retriever=MagicMock())
     request = AgentRequest(input_text="   ")
     with pytest.raises(AgentExecutionError, match="must not be empty"):
+        agent.execute(request)
+def test_rag_agent_missing_user_id() -> None:
+    agent = RAGAgent(retriever=MagicMock())
+    # No context means no user_id
+    request = AgentRequest(input_text="Query")
+    with pytest.raises(AgentExecutionError, match="user_id is required for RAG retrieval"):
         agent.execute(request)

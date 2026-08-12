@@ -266,32 +266,47 @@ class ReplayEngine:
         
         original_state = {}
         
-        if hasattr(self.agent, "_registry"):
-            original_state["_registry"] = self.agent._registry
-            self.agent._registry = mock_registry
-            
-        if hasattr(self.agent, "_loop"):
-            original_state["_loop_registry"] = getattr(self.agent._loop, "_registry", None)
-            if hasattr(self.agent._loop, "_registry"):
-                self.agent._loop._registry = mock_registry
+        # Phase 6 Supervisor path
+        if self.agent.__class__.__name__ == "Supervisor":
+            if hasattr(self.agent, "_planner") and hasattr(self.agent._planner, "_provider"):
+                original_state["supervisor_planner_provider"] = self.agent._planner._provider
+                self.agent._planner._provider = mock_provider
                 
-        if hasattr(self.agent, "_router") and hasattr(self.agent._router, "_provider"):
-            original_state["_provider"] = self.agent._router._provider
-            self.agent._router._provider = mock_provider
-            
-        if hasattr(self.agent, "_loop") and hasattr(self.agent._loop, "_router") and hasattr(self.agent._loop._router, "_provider"):
-            original_state["_loop_provider"] = self.agent._loop._router._provider
-            self.agent._loop._router._provider = mock_provider
-            
-        if hasattr(self.agent, "_communicator"):
-            original_state["_communicator"] = self.agent._communicator
-            self.agent._communicator = mock_communicator
+            if hasattr(self.agent, "_plan_executor") and hasattr(self.agent._plan_executor, "_communicator"):
+                original_state["supervisor_executor_communicator"] = self.agent._plan_executor._communicator
+                self.agent._plan_executor._communicator = mock_communicator
+        else:
+            # Phase 5 Legacy path
+            if hasattr(self.agent, "_registry"):
+                original_state["_registry"] = self.agent._registry
+                self.agent._registry = mock_registry
+                
+            if hasattr(self.agent, "_loop"):
+                original_state["_loop_registry"] = getattr(self.agent._loop, "_registry", None)
+                if hasattr(self.agent._loop, "_registry"):
+                    self.agent._loop._registry = mock_registry
+                    
+            if hasattr(self.agent, "_router") and hasattr(self.agent._router, "_provider"):
+                original_state["_provider"] = self.agent._router._provider
+                self.agent._router._provider = mock_provider
+                
+            if hasattr(self.agent, "_loop") and hasattr(self.agent._loop, "_router") and hasattr(self.agent._loop._router, "_provider"):
+                original_state["_loop_provider"] = self.agent._loop._router._provider
+                self.agent._loop._router._provider = mock_provider
+                
+            if hasattr(self.agent, "_communicator"):
+                original_state["_communicator"] = self.agent._communicator
+                self.agent._communicator = mock_communicator
             
         try:
             result = self.agent.execute(new_request)
             return ReplayResult(
                 status=ReplayStatus.REPLAY_SUCCESS, 
-                details={"output": result.output, "success": result.success}
+                details={
+                    "output": result.output, 
+                    "success": result.success,
+                    "metadata": result.metadata,
+                }
             )
         except ReplayMismatchError as e:
             return ReplayResult(
@@ -299,11 +314,27 @@ class ReplayEngine:
                 details={"error": str(e)}
             )
         except Exception as e:
+            from app.agent.contracts import AgentExecutionError
+            metadata = {}
+            if isinstance(e, AgentExecutionError) and getattr(e, "details", None):
+                metadata = e.details
+                
             return ReplayResult(
                 status=ReplayStatus.FAILED, 
-                details={"error": str(e), "traceback": traceback.format_exc()}
+                details={
+                    "error": str(e), 
+                    "traceback": traceback.format_exc(),
+                    "metadata": metadata
+                }
             )
         finally:
+            # Phase 6 restore
+            if "supervisor_planner_provider" in original_state:
+                self.agent._planner._provider = original_state["supervisor_planner_provider"]
+            if "supervisor_executor_communicator" in original_state:
+                self.agent._plan_executor._communicator = original_state["supervisor_executor_communicator"]
+                
+            # Phase 5 restore
             if "_registry" in original_state:
                 self.agent._registry = original_state["_registry"]
             if "_loop_registry" in original_state:

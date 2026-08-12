@@ -13,6 +13,10 @@ class GoldenConstraints:
     must_not_handoff: bool = False
     expected_success: bool = True
 
+    expected_task_types: List[str] = field(default_factory=list)
+    expected_capabilities: List[str] = field(default_factory=list)
+    expected_plan_steps: Optional[int] = None
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "GoldenConstraints":
         if not isinstance(data, dict):
@@ -23,11 +27,26 @@ class GoldenConstraints:
         if not isinstance(req_tools, list):
              raise ValueError("required_tools must be a list")
              
+        task_types = data.get("expected_task_types", [])
+        if not isinstance(task_types, list):
+             raise ValueError("expected_task_types must be a list")
+             
+        caps = data.get("expected_capabilities", [])
+        if not isinstance(caps, list):
+             raise ValueError("expected_capabilities must be a list")
+             
+        plan_steps = data.get("expected_plan_steps")
+        if plan_steps is not None and not isinstance(plan_steps, int):
+             raise ValueError("expected_plan_steps must be an integer")
+             
         return cls(
             expected_agent=str(data["expected_agent"]) if data.get("expected_agent") is not None else None,
             required_tools=frozenset(str(t) for t in req_tools),
             must_not_handoff=bool(data.get("must_not_handoff", False)),
-            expected_success=bool(data.get("expected_success", True))
+            expected_success=bool(data.get("expected_success", True)),
+            expected_task_types=[str(t) for t in task_types],
+            expected_capabilities=[str(c) for c in caps],
+            expected_plan_steps=plan_steps,
         )
 
 

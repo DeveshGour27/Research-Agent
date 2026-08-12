@@ -103,7 +103,7 @@ def test_chroma_persistence_across_retrievers(monkeypatch):
                     enriched.append(md)
                 self._collection.add(ids=ids, embeddings=vectors.tolist(), metadatas=enriched, documents=documents)
 
-            def query(self, vector, top_k=5):
+            def query(self, vector, top_k=5, *, user_id="test_user"):
                 # Delegate to fake collection; return list of tuples matching ChromaVectorStore.query output
                 res = self._collection.query(query_embeddings=[np.asarray(vector).tolist()], n_results=top_k, include=["metadatas", "distances", "documents", "ids"])
                 # res is chroma-like dict with nested lists; mimic ChromaVectorStore.query post-processing
@@ -128,6 +128,9 @@ def test_chroma_persistence_across_retrievers(monkeypatch):
             def all_ids(self):
                 return list(store.get(collection_name, {}).keys())
 
+            def all_items(self, user_id):
+                return [(k, v["metadata"]) for k, v in store.get(collection_name, {}).items()]
+
             def size(self):
                 return len(store.get(collection_name, {}))
 
@@ -138,11 +141,11 @@ def test_chroma_persistence_across_retrievers(monkeypatch):
     # Index a document with Retriever A
     r1 = Retriever(embedding_provider_name="mock")
     doc = ingest_from_string("/tmp/test_rfc.txt", "Access-token rotation interval is 30 days.", filename="test_rfc.txt")
-    r1.index_documents([doc])
+    r1.index_documents([doc], user_id="test_user")
 
     # Create a new Retriever instance (simulating a restart) and ensure it can retrieve
     r2 = Retriever(embedding_provider_name="mock")
-    results = r2.retrieve("What is the required access-token rotation interval in RFC-TEST-9700?", top_k=5)
+    results = r2.retrieve("What is the required access-token rotation interval in RFC-TEST-9700?", top_k=5, user_id="test_user")
 
     assert results, "Expected at least one retrieval result"
     # Ensure returned metadata contains the original text

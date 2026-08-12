@@ -73,12 +73,13 @@ class EvaluationEngine:
             
             agent_output = replay_res.details.get("output")
             agent_success = replay_res.details.get("success", False)
+            agent_metadata = replay_res.details.get("metadata", {})
             replay_mismatch = replay_res.status == ReplayStatus.REPLAY_MISMATCH
             fatal_error = replay_res.status == ReplayStatus.FAILED
             
             # Create a mock agent result for the judge if we succeeded
             result = AgentResult(
-                request=req, state=None, output=agent_output, success=agent_success # type: ignore
+                request=req, state=None, output=agent_output, success=agent_success, metadata=agent_metadata # type: ignore
             ) if not fatal_error else None
             
         else:
@@ -118,7 +119,7 @@ class EvaluationEngine:
 
         # 2. Deterministic Gate Evaluation
         failures = []
-        if fatal_error:
+        if fatal_error and case.constraints.expected_success:
             failures.append("Execution resulted in a fatal error.")
         if replay_mismatch:
             failures.append("Replay trace diverged from GoldenCase ReplayRecord.")
@@ -144,6 +145,47 @@ class EvaluationEngine:
                         
                 if case.constraints.must_not_handoff and handoffs:
                     failures.append("Handoff initiated but must_not_handoff was True.")
+
+            # Plan assertions
+            plan = None
+            if result and result.metadata:
+                plan = result.metadata.get("executed_plan")
+
+            if case.constraints.expected_plan_steps is not None:
+                if plan:
+                    if len(plan.steps) != case.constraints.expected_plan_steps:
+                        failures.append(f"Expected {case.constraints.expected_plan_steps} plan steps, got {len(plan.steps)}")
+                elif not case.replay_record:
+                    # Fallback to observability event
+                    plan_events = [e for e in captured_events if e.event_type == "PlanGenerated"]
+                    if not plan_events:
+                        failures.append("Expected plan steps but no PlanGeneratedEvent found and no plan in metadata.")
+                    else:
+                        last_plan = plan_events[-1]
+                        if last_plan.event_data.get("step_count") != case.constraints.expected_plan_steps:
+                            failures.append(f"Expected {case.constraints.expected_plan_steps} plan steps in event, got {last_plan.event_data.get('step_count')}")
+                else:
+                    failures.append("Expected plan steps but no plan found in replay result metadata.")
+
+            if case.constraints.expected_task_types:
+                if plan:
+                    actual_types = [s.task_type for s in plan.steps.values()]
+                    missing = set(case.constraints.expected_task_types) - set(actual_types)
+                    if missing:
+                        failures.append(f"Expected task types {missing} not found in plan.")
+                else:
+                    failures.append("Expected task types but no plan found in result metadata.")
+
+            if case.constraints.expected_capabilities:
+                if plan:
+                    actual_caps = set()
+                    for s in plan.steps.values():
+                        actual_caps.update(s.required_capabilities)
+                    missing = set(case.constraints.expected_capabilities) - actual_caps
+                    if missing:
+                        failures.append(f"Expected capabilities {missing} not found in plan.")
+                else:
+                    failures.append("Expected capabilities but no plan found in result metadata.")
 
         det_result = DeterministicGateResult(
             passed=len(failures) == 0,

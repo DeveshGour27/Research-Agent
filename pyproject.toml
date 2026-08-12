@@ -13,10 +13,13 @@ dependencies = [
     "numpy",
     "tiktoken",
     "PyMuPDF",
-    "python-dotenv"
+    "python-dotenv",
+    "fastapi",
+    "uvicorn"
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest"
+    "pytest",
+    "httpx"
 ]

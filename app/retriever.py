@@ -370,8 +370,8 @@ class Retriever:
             Chunk,
         ] = {}
 
-        self._bm25 = None
-        self._bm25_ids: List[str] = []
+        self._bm25: Dict[str, Any] = {}
+        self._bm25_ids: Dict[str, List[str]] = {}
 
         # Created lazily using the actual embedding dimension.
         self._vector_store = None
@@ -379,17 +379,18 @@ class Retriever:
     def index_documents(
         self,
         docs: Iterable[Document],
+        user_id: str,
     ) -> None:
         chunks = chunk_documents(
             docs
         )
 
-        self.chunk_index = {
+        self.chunk_index.update({
             chunk.id: chunk
             for chunk in chunks
-        }
+        })
 
-        self._bm25_ids = [
+        self._bm25_ids[user_id] = [
             chunk.id
             for chunk in chunks
         ]
@@ -402,12 +403,12 @@ class Retriever:
         if tokenized:
             from rag.reranker import BM25Okapi
 
-            self._bm25 = BM25Okapi(
+            self._bm25[user_id] = BM25Okapi(
                 tokenized
             )
 
         else:
-            self._bm25 = None
+            self._bm25.pop(user_id, None)
 
         texts = [
             chunk.text
@@ -457,6 +458,7 @@ class Retriever:
         metadata = [
             {
                 "text": chunk.text,
+                "user_id": user_id,
                 **chunk.metadata,
             }
             for chunk in chunks
@@ -481,6 +483,7 @@ class Retriever:
 
     def _restore_bm25_from_vector_store(
         self,
+        user_id: str,
     ) -> None:
         """
         Rebuild the in-memory BM25 index from persisted vector-store
@@ -488,14 +491,14 @@ class Retriever:
         """
 
         if (
-            self._bm25 is not None
+            user_id in self._bm25
             or self._vector_store is None
         ):
             return
 
         try:
             items = (
-                self._vector_store.all_items()
+                self._vector_store.all_items(user_id=user_id)
             )
 
         except Exception as exc:
@@ -539,8 +542,8 @@ class Retriever:
         if not tokenized:
             return
 
-        self._bm25_ids = ids
-        self._bm25 = BM25Okapi(
+        self._bm25_ids[user_id] = ids
+        self._bm25[user_id] = BM25Okapi(
             tokenized
         )
 
@@ -553,19 +556,21 @@ class Retriever:
         self,
         query: str,
         top_k: int,
+        user_id: str,
     ) -> List[
         Tuple[str, float, dict]
     ]:
-        if self._bm25 is None:
+        bm25 = self._bm25.get(user_id)
+        if bm25 is None:
             return []
 
-        scores = self._bm25.get_scores(
+        scores = bm25.get_scores(
             query.split()
         )
 
         pairs = list(
             zip(
-                self._bm25_ids,
+                self._bm25_ids.get(user_id, []),
                 scores,
             )
         )
@@ -587,7 +592,7 @@ class Retriever:
                         metadata or {}
                     )
                     for chunk_id, metadata
-                    in self._vector_store.all_items()
+                    in self._vector_store.all_items(user_id=user_id)
                 }
 
             except Exception:
@@ -628,6 +633,7 @@ class Retriever:
         self,
         query: str,
         top_k: int,
+        user_id: str,
     ) -> List[
         Tuple[str, float, dict]
     ]:
@@ -655,6 +661,7 @@ class Retriever:
         results = self._vector_store.query(
             query_vector,
             top_k=top_k,
+            user_id=user_id,
         )
 
         logger.debug(
@@ -667,6 +674,7 @@ class Retriever:
     def retrieve(
         self,
         query: str,
+        user_id: str,
         top_k: Optional[int] = None,
         hybrid: bool = True,
         rerank: bool = True,
@@ -685,6 +693,7 @@ class Retriever:
             vector_results = self._vector_search(
                 query,
                 top_k,
+                user_id=user_id,
             )
 
             results = [
@@ -706,15 +715,17 @@ class Retriever:
             vector_results = self._vector_search(
                 query,
                 top_k=top_k * 3,
+                user_id=user_id,
             )
 
             # A fresh Retriever does not have the BM25 index in memory.
             # Restore it from persisted metadata.
-            self._restore_bm25_from_vector_store()
+            self._restore_bm25_from_vector_store(user_id=user_id)
 
             bm25_results = self._bm25_search(
                 query,
                 top_k=top_k * 3,
+                user_id=user_id,
             )
 
             # -------------------------------------------------
@@ -897,6 +908,8 @@ class Retriever:
     def agentic_retrieval_loop(
         self,
         query: str,
+        *,
+        user_id: str,
         relevant_ids: Iterable[str] = (),
         max_iters: Optional[int] = None,
     ) -> List[RetrievalResult]:
@@ -953,6 +966,7 @@ class Retriever:
             for subquery in subqueries:
                 retrieved = self.retrieve(
                     subquery,
+                    user_id=user_id,
                     top_k=settings.top_k_retrieval,
                     hybrid=True,
                     rerank=getattr(

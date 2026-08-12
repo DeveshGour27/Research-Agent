@@ -26,11 +26,11 @@ def test_mock_embeddings_and_vector_store_query():
     emb = provider.embed_texts(texts)
     assert emb.shape == (2, 16)
     vs = InMemoryVectorStore(dim=16)
-    vs.add_batch(["a", "b"], emb, metadatas=[{"text": texts[0]}, {"text": texts[1]}])
+    vs.add_batch(["a", "b"], emb, metadatas=[{"text": texts[0], "user_id": "test_user"}, {"text": texts[1], "user_id": "test_user"}])
     q = provider.embed_texts(["apple fruit"][0:1])
     # q is 1d array
     qvec = provider.embed_texts(["apple fruit"])[0]
-    res = vs.query(qvec, top_k=2)
+    res = vs.query(qvec, top_k=2, user_id="test_user")
     assert res[0][0] == "a"
 
 
@@ -55,11 +55,11 @@ def test_retriever_end_to_end():
     # Make one doc about cars
     docs.append(ChunkDoc(id="dcar", content=("car truck engine " * 50), source="s_car", metadata={}))
     r = Retriever(embedding_provider_name="mock", reranker=NoopReranker())
-    r.index_documents(docs)
+    r.index_documents(docs, user_id="test_user")
     # pick a relevant chunk id (first in index)
     assert r.chunk_index
     some_id = next(iter(r.chunk_index.keys()))
-    results = r.agentic_retrieval_loop("apple", relevant_ids=[some_id], max_iters=2)
+    results = r.agentic_retrieval_loop("apple", relevant_ids=[some_id], max_iters=2, user_id="test_user")
     assert isinstance(results, list)
     assert results[0].iteration == 1
     # stop_reason should be one of allowed

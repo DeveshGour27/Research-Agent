@@ -53,13 +53,20 @@ def test_vector_store_factory_and_persistence(monkeypatch):
             for i, _id in enumerate(ids):
                 store_data[self.collection][_id] = {"embedding": vectors[i], "metadata": metadatas[i]}
 
-        def query(self, vector, top_k=5):
+        def query(self, vector, top_k=5, *, user_id="test_user"):
             # naive: return stored ids
             coll = store_data.get(self.collection, {})
             out = []
             for _id, entry in coll.items():
                 out.append((_id, 1.0, entry.get("metadata", {})))
             return out[:top_k]
+
+        def all_items(self, user_id):
+            coll = store_data.get(self.collection, {})
+            out = []
+            for _id, entry in coll.items():
+                out.append((_id, entry.get("metadata", {})))
+            return out
 
     # Monkeypatch constructor
     monkeypatch.setattr(
@@ -79,12 +86,12 @@ def test_vector_store_factory_and_persistence(monkeypatch):
         # simple small documents
         type("D", (), {"id": "d1", "content": "apple banana", "source": "s1", "metadata": {}})(),
     ]
-    r.index_documents(docs)
+    r.index_documents(docs, user_id="test_user")
     # Create a new retriever and ensure documents are available via vector store
     r2 = Retriever(embedding_provider_name="mock")
     # The vector store class will be instantiated anew but backing store_data is shared
     # Query using retriever internal vector store by generating embedding for 'apple'
-    qres = r2.retrieve("apple")
+    qres = r2.retrieve("apple", user_id="test_user")
     assert qres, "Expected retrieval results from fake Chroma store"
 
 
