@@ -24,18 +24,31 @@ def test_rag_agent_tool_isolation() -> None:
     # Should not have any tool registry or web search tool
     assert not hasattr(agent, "_tool_registry")
 
-def test_rag_agent_successful_retrieval() -> None:
+from unittest.mock import patch
+from app.reflection import ReflectionResult, ReflectionDecision
+
+@patch("app.reflection.policy.ReflectionEvaluator")
+def test_rag_agent_successful_retrieval(mock_evaluator_class) -> None:
     mock_retriever = MagicMock()
     mock_retriever.retrieve.return_value = [
         Retrieved(chunk_id="1", score=0.9, source_score=0.9, vector_score=0.9, metadata={"text": "Doc 1"}),
         Retrieved(chunk_id="2", score=0.8, source_score=0.8, vector_score=0.8, metadata={"text": "Doc 2"}),
     ]
 
+    mock_eval = mock_evaluator_class.return_value
+    mock_eval.evaluate.return_value = ReflectionResult(
+        decision=ReflectionDecision.ACCEPT,
+        confidence=0.9,
+        reason="Good",
+        retry_retrieval=False
+    )
+
     agent = RAGAgent(retriever=mock_retriever)
     context = AgentExecutionContext(task="Find something", user_id="test_user")
     request = AgentRequest(input_text="What is X?", context=context)
     
-    result = agent.execute(request)
+    with patch("app.config.settings.reflection_enabled", True):
+        result = agent.execute(request)
 
     mock_retriever.retrieve.assert_called_once_with(query="What is X?", user_id="test_user")
     assert result.success is True

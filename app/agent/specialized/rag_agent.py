@@ -58,21 +58,60 @@ class RAGAgent(BaseAgent):
             )
 
         try:
-            results = self._retriever.retrieve(query=normalized_input, user_id=user_id)
+            from app.reflection import EvidenceSufficiencyPolicy, ReflectionDecision
+            from app.config import settings
+            from app.retriever import _rewrite_query
             
-            # Serialize the retrieval results deterministically
-            serialized_results = []
-            for res in results:
-                serialized_results.append({
-                    "chunk_id": res.chunk_id,
-                    "score": round(res.score, 4),
-                    "text": res.metadata.get("text", ""),
-                })
+            current_query = normalized_input
             
-            if not serialized_results:
-                output = "No relevant documents found."
+            if not getattr(settings, "reflection_enabled", True):
+                results = self._retriever.retrieve(query=current_query, user_id=user_id)
+                serialized_results = []
+                for res in results:
+                    serialized_results.append({
+                        "chunk_id": res.chunk_id,
+                        "score": round(res.score, 4),
+                        "text": res.metadata.get("text", ""),
+                    })
+                
+                if not serialized_results:
+                    output = "No relevant documents found."
+                else:
+                    output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
             else:
-                output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
+                policy = EvidenceSufficiencyPolicy()
+                attempt = 0
+                
+                while attempt <= settings.max_retrieval_retries:
+                    if attempt > 0:
+                        current_query = _rewrite_query(current_query)
+                        
+                    results = self._retriever.retrieve(query=current_query, user_id=user_id)
+                    reflection = policy.evaluate(normalized_input, results, current_attempt=attempt)
+                    
+                    if reflection.decision == ReflectionDecision.ACCEPT:
+                        serialized_results = []
+                        for res in results:
+                            serialized_results.append({
+                                "chunk_id": res.chunk_id,
+                                "score": round(res.score, 4),
+                                "text": res.metadata.get("text", ""),
+                            })
+                        
+                        if not serialized_results:
+                            output = "No relevant documents found."
+                        else:
+                            output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
+                        break
+                        
+                    elif reflection.decision == ReflectionDecision.INSUFFICIENT_EVIDENCE:
+                        output = "No relevant documents found."
+                        break
+                        
+                    elif reflection.decision == ReflectionDecision.RETRY_RETRIEVAL:
+                        attempt += 1
+                else:
+                    output = "No relevant documents found."
                 
             success = True
             error = None

@@ -211,6 +211,15 @@ class Settings(BaseSettings):
     max_retrieval_iterations: int = Field(
         default=3, gt=0, description="Maximum iterations for the agentic retrieval loop"
     )
+    max_retrieval_retries: int = Field(
+        default=1, ge=0, description="Maximum number of times to retry retrieval when evidence is insufficient"
+    )
+    max_reflection_attempts: int = Field(
+        default=1, ge=0, description="Maximum number of times to invoke reflection per step"
+    )
+    reflection_enabled: bool = Field(
+        default=True, description="Whether to enable pre-generation reflection gate"
+    )
     
     # ------------------------------------------------------------------ #
     # Planning
