@@ -65,14 +65,20 @@ def combine_scores(bm25_results: List[Tuple[str, float, dict]],
         score = bm25_weight * bscore + vector_weight * vscore
         # prefer bm25 metadata when available, otherwise use vector metadata
         metadata = bm25_meta.get(cid) if cid in bm25_meta else vec_meta.get(cid, {})
+        
+        raw_bscore = bm25_map.get(cid, 0.0)
+        raw_vscore = vec_map.get(cid, 0.0)
+        
         results.append(Retrieved(
             chunk_id=cid,
             score=score,
-            source_score=bscore,
-            vector_score=vscore,
+            source_score=raw_bscore,
+            vector_score=raw_vscore,
             metadata=metadata,
             hybrid_score=score
         ))
 
-    results.sort(key=lambda r: r.score, reverse=True)
+    results.sort(
+        key=lambda r: (-r.score, r.chunk_id)
+    )
     return results[:top_k]
