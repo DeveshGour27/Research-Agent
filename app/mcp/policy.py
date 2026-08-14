@@ -9,6 +9,7 @@ from enum import Enum
 class PolicyDecision(str, Enum):
     ALLOW = "allow"
     DENY = "deny"
+    REQUIRE_HUMAN = "require_human"
 
 class MCPPolicy:
     """
@@ -33,6 +34,9 @@ class MCPPolicy:
         """Evaluate if the tool is allowed to be invoked."""
         # For Phase 10, if the server is allowed, its tools are allowed.
         # Future implementations can expand on tool-specific policies.
-        if self.evaluate_server(server_name) == PolicyDecision.DENY:
+        server_policy = self.evaluate_server(server_name)
+        if server_policy == PolicyDecision.DENY:
             return PolicyDecision.DENY
+        elif server_policy == PolicyDecision.REQUIRE_HUMAN:
+            return PolicyDecision.REQUIRE_HUMAN
         return PolicyDecision.ALLOW

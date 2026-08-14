@@ -30,6 +30,7 @@ from app.agent.validator import PlanValidator
 from app.logger import get_logger
 from app.observability.tracer import extract_span_info
 from app.observability import events as obs_events
+from app.hitl.service import HITLService
 
 logger = get_logger(__name__)
 
@@ -64,6 +65,7 @@ class Supervisor(BaseAgent):
         plan_validator: PlanValidator | None = None,
         plan_executor: PlanExecutor | None = None,
         execution_policy: ExecutionPolicy | None = None,
+        hitl_service: HITLService | None = None,
     ) -> None:
         if agents is None and registry is None:
             raise ValueError("Either agents or registry must be provided.")
@@ -109,6 +111,7 @@ class Supervisor(BaseAgent):
         self._plan_validator = plan_validator or (PlanValidator() if planner else None)
         self._plan_executor = plan_executor
         self._execution_policy = execution_policy or ExecutionPolicy()
+        self._hitl_service = hitl_service
 
     @property
     def identity(self) -> AgentIdentity:
@@ -202,37 +205,50 @@ class Supervisor(BaseAgent):
         failure_context: list[StepResult] | None = None
 
         while True:
-            # 1. Generate plan
+            # 1. Generate plan or get approved plan
             from app.exceptions import PlanCreationError, PlanValidationError
             try:
-                plan = self._planner.generate_plan(
-                    goal=normalized_input,
-                    context=context,
-                    previous_plan=previous_plan,
-                    failure_context=failure_context,
-                )
+                plan = None
+                if self._hitl_service and not previous_plan:
+                    # check for an already-approved plan for this checkpoint
+                    plan = self._hitl_service.get_approved_plan(context)
+                    if plan:
+                        logger.info("Restored approved plan for execution.")
 
-                logger.info(
-                    "Plan generated",
-                    extra={
-                        "plan_id": plan.plan_id,
-                        "step_count": len(plan.steps),
-                        "is_replan": previous_plan is not None,
-                    },
-                )
+                if not plan:
+                    plan = self._planner.generate_plan(
+                        goal=normalized_input,
+                        context=context,
+                        previous_plan=previous_plan,
+                        failure_context=failure_context,
+                    )
 
-                # Phase 5.8: plan generated event
-                if span:
-                    _emit_safe(obs_events.PlanGeneratedEvent(
-                        trace_id=span.trace_id, run_id=span.run_id,
-                        span_id=span.span_id, parent_span_id=span.parent_span_id,
-                        plan_id=plan.plan_id, step_count=len(plan.steps),
-                        is_replan=previous_plan is not None,
-                    ))
+                    logger.info(
+                        "Plan generated",
+                        extra={
+                            "plan_id": plan.plan_id,
+                            "step_count": len(plan.steps),
+                            "is_replan": previous_plan is not None,
+                        },
+                    )
 
-                # 2. Validate plan
-                if self._plan_validator:
-                    self._plan_validator.validate(plan)
+                    # Phase 5.8: plan generated event
+                    if span:
+                        _emit_safe(obs_events.PlanGeneratedEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            plan_id=plan.plan_id, step_count=len(plan.steps),
+                            is_replan=previous_plan is not None,
+                        ))
+
+                    # 2. Validate plan
+                    if self._plan_validator:
+                        self._plan_validator.validate(plan)
+                        
+                    # 2b. Evaluate HITL Policy
+                    if self._hitl_service:
+                        self._hitl_service.evaluate_and_enforce_plan(plan, context)
+
             except (PlanCreationError, PlanValidationError) as e:
                 # If we cannot even generate or validate a structurally sound plan, fail execution deterministically
                 logger.error(f"Plan generation failed: {e}")

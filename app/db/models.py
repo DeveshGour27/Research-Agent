@@ -79,3 +79,24 @@ class JobStep(Base):
     created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
 
     job = relationship("Job", back_populates="steps")
+
+
+class HITLRequest(Base):
+    __tablename__ = "hitl_requests"
+
+    request_id = Column(String, primary_key=True, default=_uuid_str)
+    job_id = Column(String, ForeignKey("jobs.job_id"), nullable=False, index=True)
+    run_id = Column(String, nullable=False, index=True)
+    request_type = Column(String, nullable=False) # "TOOL" or "PLAN"
+    component_name = Column(String, nullable=False) # tool_name or "PLAN"
+    invocation_fingerprint = Column(String, nullable=False, index=True)
+    plan_fingerprint = Column(String, nullable=True, index=True)
+    payload = Column(Text, nullable=False) # JSON
+    status = Column(String, default="PENDING", nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    decided_at = Column(DateTime(timezone=True), nullable=True)
+    decided_by = Column(String, nullable=True)
+    decision_reason = Column(Text, nullable=True)
+
+    job = relationship("Job")

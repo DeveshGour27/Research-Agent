@@ -11,13 +11,15 @@ from app.services.job_manager import AsyncJobManager
 from app.middleware.request_id import RequestIDMiddleware
 from app.config import settings
 from app.services.rate_limiter import RateLimiter
+from app.hitl.service import HITLService
+from app.hitl.policy import HITLPolicy
 
-def default_supervisor_factory():
+def default_supervisor_factory(hitl_service: HITLService | None = None):
     # In a real deployment, this builds the full Phase 6 Supervisor.
     # For Phase 7.4, this is overridden in tests.
     from app.agent.supervisor import Supervisor
     from app.agent.registry import AgentRegistry
-    return Supervisor(registry=AgentRegistry())
+    return Supervisor(registry=AgentRegistry(), hitl_service=hitl_service)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,16 +28,25 @@ async def lifespan(app: FastAPI):
     if settings.environment != Environment.PRODUCTION:
         Base.metadata.create_all(bind=engine)
     
+    # Initialize HITL
+    policy = HITLPolicy(
+        require_human_tools={"safe_search", "database.write"}, # Example policy config
+        require_human_plans=True
+    )
+    hitl_service = HITLService(session_factory=SessionLocal, policy=policy)
+    app.state.hitl_service = hitl_service
+
     # Initialize AsyncJobManager
     job_manager = AsyncJobManager(
         session_factory=SessionLocal,
-        supervisor_factory=default_supervisor_factory,
+        supervisor_factory=lambda: default_supervisor_factory(hitl_service),
         max_concurrent_jobs=settings.max_concurrent_jobs,
         job_timeout_seconds=settings.job_timeout_seconds,
         worker_id=settings.worker_id,
         job_heartbeat_interval_seconds=settings.job_heartbeat_interval_seconds,
         job_stale_after_seconds=settings.job_stale_after_seconds,
         job_recovery_poll_interval_seconds=settings.job_recovery_poll_interval_seconds,
+        hitl_service=hitl_service,
     )
     app.state.job_manager = job_manager
     

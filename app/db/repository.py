@@ -19,7 +19,8 @@ def _utc_now() -> datetime.datetime:
 # Valid job state transitions. Terminal states have no outgoing edges.
 VALID_TRANSITIONS: dict[str, set[str]] = {
     "PENDING": {"RUNNING", "CANCELLED"},
-    "RUNNING": {"COMPLETED", "FAILED", "CANCELLED"},
+    "RUNNING": {"COMPLETED", "FAILED", "CANCELLED", "WAITING_FOR_HUMAN"},
+    "WAITING_FOR_HUMAN": {"PENDING", "CANCELLED"},
     "COMPLETED": set(),
     "FAILED": set(),
     "CANCELLED": set(),
@@ -397,3 +398,86 @@ class SQLJobRepository:
             
         stmt = select(JobStep).where(JobStep.job_id == job_id).order_by(JobStep.created_at)
         return self.db.execute(stmt).scalars().all()
+
+    # ----------------------------------------------------------------------
+    # HITL Request Operations
+    # ----------------------------------------------------------------------
+    def create_hitl_request(
+        self,
+        job_id: str,
+        run_id: str,
+        request_type: str,
+        component_name: str,
+        invocation_fingerprint: str,
+        payload: str,
+        plan_fingerprint: str | None = None,
+    ) -> "HITLRequest":
+        from app.db.models import HITLRequest
+        req = HITLRequest(
+            job_id=job_id,
+            run_id=run_id,
+            request_type=request_type,
+            component_name=component_name,
+            invocation_fingerprint=invocation_fingerprint,
+            plan_fingerprint=plan_fingerprint,
+            payload=payload,
+            status="PENDING",
+        )
+        self.db.add(req)
+        self.db.commit()
+        self.db.refresh(req)
+        return req
+
+    def get_hitl_request(self, request_id: str) -> "HITLRequest | None":
+        from app.db.models import HITLRequest
+        return self.db.get(HITLRequest, request_id)
+
+    def get_pending_hitl_request_by_fingerprint(
+        self, job_id: str, run_id: str, fingerprint: str
+    ) -> "HITLRequest | None":
+        from app.db.models import HITLRequest
+        stmt = select(HITLRequest).where(
+            HITLRequest.job_id == job_id,
+            HITLRequest.run_id == run_id,
+            HITLRequest.invocation_fingerprint == fingerprint,
+            HITLRequest.status == "PENDING"
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+    
+    def get_approved_hitl_request_by_fingerprint(
+        self, job_id: str, run_id: str, fingerprint: str
+    ) -> "HITLRequest | None":
+        from app.db.models import HITLRequest
+        stmt = select(HITLRequest).where(
+            HITLRequest.job_id == job_id,
+            HITLRequest.run_id == run_id,
+            HITLRequest.invocation_fingerprint == fingerprint,
+            HITLRequest.status == "APPROVED"
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def update_hitl_request_status(
+        self,
+        request_id: str,
+        status: str,
+        decided_by: str | None = None,
+        decision_reason: str | None = None,
+    ) -> bool:
+        from app.db.models import HITLRequest
+        stmt = (
+            update(HITLRequest)
+            .where(
+                HITLRequest.request_id == request_id,
+                HITLRequest.status == "PENDING"
+            )
+            .values(
+                status=status,
+                decided_by=decided_by,
+                decision_reason=decision_reason,
+                decided_at=_utc_now()
+            )
+        )
+        res = self.db.execute(stmt)
+        # Flush, but let caller commit if needed
+        self.db.flush()
+        return res.rowcount > 0

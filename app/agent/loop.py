@@ -11,6 +11,8 @@ from app.logger import get_logger
 from app.tools.base import ToolResult
 from app.tools.registry import ToolRegistry
 from app.agent.state import AgentState
+from app.agent.execution_context import AgentExecutionContext
+from app.hitl.service import HITLService
 
 logger = get_logger(__name__)
 
@@ -48,20 +50,50 @@ class AgentLoop:
         router: LLMRouter,
         registry: ToolRegistry,
         max_iterations: int | None = None,
+        hitl_service: HITLService | None = None,
     ) -> None:
         self._router = router
         self._registry = registry
         self._max_iterations = max_iterations if max_iterations is not None else settings.max_retries * 3
+        self._hitl_service = hitl_service
 
     @staticmethod
     def initial_messages() -> list[dict[str, Any]]:
         """Return the initial system message list for a new conversation."""
         return [{"role": "system", "content": _SYSTEM_PROMPT}]
 
-    def run(self, messages: list[dict[str, Any]]) -> AgentState:
+    def run(self, messages: list[dict[str, Any]], context: AgentExecutionContext | None = None) -> AgentState:
         """Run the loop for the supplied *messages* and return final state."""
         state = AgentState(messages=[*messages])
         tool_schemas = self._registry.schemas()
+
+        # RECOVERY: Check if the last message was an unresolved tool call request from the assistant.
+        # This occurs if the job was paused for human approval and is now resuming.
+        from app.llm.base import ToolCall
+        from app.exceptions import AgentHITLPauseException
+
+        if state.messages and state.messages[-1].get("role") == "assistant" and state.messages[-1].get("tool_calls"):
+            logger.info("Resuming execution with unresolved tool calls from previous run.")
+            last_msg = state.messages[-1]
+            for tc in last_msg["tool_calls"]:
+                tool_call = ToolCall(
+                    id=tc["id"],
+                    name=tc["function"]["name"],
+                    arguments=json.loads(tc["function"]["arguments"])
+                )
+                try:
+                    observation = self._registry.execute(tool_call, context=context, hitl_service=self._hitl_service)
+                    state.observations.append(observation)
+                    state.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": observation.tool_call_id,
+                            "content": observation.content,
+                        }
+                    )
+                except AgentHITLPauseException as e:
+                    e.partial_state = state
+                    raise
 
         for _ in range(self._max_iterations):
             state.iteration += 1
@@ -116,7 +148,11 @@ class AgentLoop:
                 )
             else:
                 # Execute the tool; errors are wrapped in an error ToolResult.
-                observation = self._registry.execute(tool_call)
+                try:
+                    observation = self._registry.execute(tool_call, context=context, hitl_service=self._hitl_service)
+                except AgentHITLPauseException as e:
+                    e.partial_state = state
+                    raise
             state.observations.append(observation)
 
             # Append the tool result so the LLM sees the observation next turn.

@@ -72,7 +72,12 @@ class ToolRegistry:
     # Execution
     # ------------------------------------------------------------------ #
 
-    def execute(self, tool_call: ToolCall) -> ToolResult:
+    def execute(
+        self,
+        tool_call: ToolCall,
+        context: Any = None,
+        hitl_service: Any = None,
+    ) -> ToolResult:
         """Dispatch *tool_call* to the matching tool.
 
         Errors — unknown tool, execution failure, or unexpected exception —
@@ -98,6 +103,9 @@ class ToolRegistry:
             extra={"tool_name": tool_call.name, "arguments": tool_call.arguments},
         )
         try:
+            if hitl_service is not None:
+                hitl_service.evaluate_and_enforce_tool(tool, tool_call.arguments, context)
+                
             content = tool.execute(**tool_call.arguments)
             logger.debug("Tool succeeded", extra={"tool_name": tool_call.name})
             return ToolResult(tool_call_id=tool_call.id, content=content, is_error=False)

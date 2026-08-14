@@ -252,3 +252,111 @@ async def cancel_research_job(
         job_id=job.job_id,
         status=job.status,
     )
+
+
+@router.get(
+    "/api/v1/research/jobs/{job_id}/hitl",
+    status_code=status.HTTP_200_OK,
+    summary="Get HITL Requests for Job",
+    tags=["Research Jobs", "HITL"],
+)
+def get_hitl_requests(
+    job_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Retrieve HITL requests for a specific job."""
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        return _error_response(request, "JOB_NOT_FOUND", "Research job was not found.", status.HTTP_404_NOT_FOUND)
+
+    from app.db.models import HITLRequest
+    from sqlalchemy import select
+    stmt = select(HITLRequest).where(HITLRequest.job_id == job_id).order_by(HITLRequest.created_at.desc())
+    requests = db.execute(stmt).scalars().all()
+
+    return {
+        "job_id": job_id,
+        "hitl_requests": [
+            {
+                "request_id": r.request_id,
+                "request_type": r.request_type,
+                "component_name": r.component_name,
+                "status": r.status,
+                "created_at": r.created_at.isoformat(),
+                "expires_at": r.expires_at.isoformat() if r.expires_at else None,
+                "decided_at": r.decided_at.isoformat() if r.decided_at else None,
+                "decided_by": r.decided_by,
+                "decision_reason": r.decision_reason,
+            }
+            for r in requests
+        ]
+    }
+
+
+@router.post(
+    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/approve",
+    status_code=status.HTTP_200_OK,
+    summary="Approve HITL Request",
+    tags=["Research Jobs", "HITL"],
+)
+def approve_hitl_request(
+    job_id: str,
+    request_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Approve a HITL request."""
+    hitl_service = getattr(getattr(request.app, "state", None), "hitl_service", None)
+    if not hitl_service:
+        return _error_response(request, "INTERNAL_ERROR", "HITL service not configured.", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # Note: HITL service uses its own session factory. We pass user ID as decider.
+    # The service internally validates if the job is waiting and request is pending.
+    
+    # First, verify job ownership
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        return _error_response(request, "JOB_NOT_FOUND", "Research job was not found.", status.HTTP_404_NOT_FOUND)
+        
+    success = hitl_service.approve_request(request_id, job_id, decided_by=user.user_id)
+    if not success:
+        return _error_response(request, "INVALID_STATE", "Request cannot be approved (already decided or job not waiting).", status.HTTP_400_BAD_REQUEST)
+
+    return {"status": "success", "message": "HITL request approved."}
+
+
+@router.post(
+    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/reject",
+    status_code=status.HTTP_200_OK,
+    summary="Reject HITL Request",
+    tags=["Research Jobs", "HITL"],
+)
+def reject_hitl_request(
+    job_id: str,
+    request_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Reject a HITL request."""
+    hitl_service = getattr(getattr(request.app, "state", None), "hitl_service", None)
+    if not hitl_service:
+        return _error_response(request, "INTERNAL_ERROR", "HITL service not configured.", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # First, verify job ownership
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        return _error_response(request, "JOB_NOT_FOUND", "Research job was not found.", status.HTTP_404_NOT_FOUND)
+        
+    success = hitl_service.reject_request(request_id, job_id, decided_by=user.user_id)
+    if not success:
+        return _error_response(request, "INVALID_STATE", "Request cannot be rejected (already decided or job not waiting).", status.HTTP_400_BAD_REQUEST)
+
+    return {"status": "success", "message": "HITL request rejected."}
+

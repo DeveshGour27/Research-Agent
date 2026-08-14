@@ -11,7 +11,7 @@ from app.agent.supervisor import Supervisor
 from app.agent.contracts import AgentRequest
 from app.agent.execution_context import AgentExecutionContext
 from app.db.repository import SQLJobRepository
-from app.exceptions import AgentExecutionError, AgentCancellationError, AgentTimeoutError, InvalidStateTransitionError
+from app.exceptions import AgentExecutionError, AgentCancellationError, AgentTimeoutError, InvalidStateTransitionError, AgentHITLPauseException
 from app.logger import get_logger
 
 import uuid
@@ -39,11 +39,13 @@ class AsyncJobManager:
         job_stale_after_seconds: int = 60,
         job_recovery_poll_interval_seconds: int = 15,
         job_max_attempts: int = 3,
+        hitl_service: Any | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._supervisor_factory = supervisor_factory
         self._semaphore = asyncio.Semaphore(max_concurrent_jobs)
         self._job_timeout = job_timeout_seconds
+        self._hitl_service = hitl_service
         
         self.worker_id = worker_id or uuid.uuid4().hex
         self._job_heartbeat_interval_seconds = job_heartbeat_interval_seconds
@@ -172,6 +174,8 @@ class AsyncJobManager:
                             stale_threshold_seconds=self._job_stale_after_seconds,
                             max_attempts=self._job_max_attempts,
                         )
+                        if self._hitl_service:
+                            self._hitl_service.expire_requests()
                         pending = repo.poll_pending_jobs(limit=10)
                         return list(set(recovered + pending))
                 
@@ -212,9 +216,9 @@ class AsyncJobManager:
                 logger.info(f"Worker {self.worker_id} failed to claim job {job_id} (already claimed/cancelled)")
                 return
 
-            context = AgentExecutionContext(task=goal)
+            context = AgentExecutionContext(task=goal, metadata={"job_id": job_id})
             self._job_contexts[job_id] = context
-            request = AgentRequest(input_text=goal, context=context)
+            request = AgentRequest(input_text=goal, context=context, metadata={"job_id": job_id})
             supervisor = self._supervisor_factory()
 
             def _update_result(status: str, result: str | None = None, error_message: str | None = None):
@@ -266,6 +270,25 @@ class AsyncJobManager:
                         status="FAILED",
                         error_message=str(e)
                     )
+            except AgentHITLPauseException as e:
+                def _mark_wait():
+                    with self._session_factory() as session:
+                        repo = SQLJobRepository(session)
+                        try:
+                            # It's waiting for human, worker goes away, worker_id = None
+                            # But we also don't clear worker_id if we want to ensure it isn't picked up?
+                            # Actually, WAITING_FOR_HUMAN shouldn't be picked up anyway.
+                            repo.update_job_status(job_id, user_id, status="WAITING_FOR_HUMAN", worker_id=self.worker_id)
+                            # Remove worker association so it can be picked up by any worker when approved
+                            from sqlalchemy import update
+                            from app.db.models import Job
+                            session.execute(update(Job).where(Job.job_id == job_id).values(worker_id=None, heartbeat_at=None))
+                            session.commit()
+                        except InvalidStateTransitionError:
+                            pass
+                await asyncio.to_thread(_mark_wait)
+                logger.info("job_paused_for_hitl", extra={"job_id": job_id, "request_id": e.request_id})
+
             except Exception as e:
                 logger.exception("Unexpected error in background job execution", extra={"job_id": job_id})
                 await asyncio.to_thread(

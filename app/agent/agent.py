@@ -16,9 +16,9 @@ from app.agent.loop import AgentLoop
 from app.agent.state import AgentState
 from app.config import settings
 from app.exceptions import AgentError, MemoryReadError, MemoryWriteError
-from app.llm.base import LLMProvider
 from app.llm.router import LLMRouter
 from app.logger import get_logger
+from app.hitl.service import HITLService
 from app.memory import (
     JsonFileMemoryStore,
     Memory,
@@ -72,14 +72,17 @@ class Agent(BaseAgent):
         memory_store: MemoryStore | None = None,
         memory_extractor: MemoryExtractor | None = None,
         memory_top_k: int = _DEFAULT_MEMORY_TOP_K,
+        hitl_service: HITLService | None = None,
     ) -> None:
         self._router = LLMRouter(provider)
         self._registry = registry
         self._max_iterations = max_iterations
+        self._hitl_service = hitl_service
         self._loop = AgentLoop(
             self._router,
             self._registry,
             self._max_iterations,
+            hitl_service=hitl_service,
         )
 
         self._memory_store = memory_store or JsonFileMemoryStore()
@@ -184,11 +187,17 @@ class Agent(BaseAgent):
 
         context.mark_running()
 
+        from app.exceptions import AgentHITLPauseException
         try:
-            state = self.run(normalized_input)
+            state = self.run(normalized_input, context=context)
 
         except AgentExecutionError:
             context.mark_failed()
+            raise
+            
+        except AgentHITLPauseException:
+            # We do NOT mark it as failed here. 
+            # The exception bubbles up to AsyncJobManager to pause the job.
             raise
 
         except AgentError as error:
@@ -249,11 +258,12 @@ class Agent(BaseAgent):
             metadata=result_metadata,
         )
 
-    def run(self, user_input: str) -> AgentState:
+    def run(self, user_input: str, context: AgentExecutionContext | None = None) -> AgentState:
         """Execute the agent loop for *user_input* and return final state.
 
         Args:
             user_input: The user's question or instruction.
+            context: Optional execution context for HITL operations.
 
         Returns:
             :class:`~app.agent.state.AgentState` containing the final answer,
@@ -280,8 +290,17 @@ class Agent(BaseAgent):
                 "content": user_input,
             },
         ]
+        
+        from app.exceptions import AgentHITLPauseException
 
-        state = self._loop.run(run_messages)
+        try:
+            state = self._loop.run(run_messages, context=context)
+        except AgentHITLPauseException as e:
+            # Save the message history up to the tool call before pausing
+            if hasattr(e, "partial_state") and e.partial_state:
+                self._messages = self._strip_memory_context_messages(e.partial_state.messages)
+                self._memory_store.save_chat_messages(self.user_id, self.chat_id, self._messages)
+            raise
 
         self._messages = self._strip_memory_context_messages(
             state.messages
