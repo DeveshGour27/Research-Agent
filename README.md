@@ -76,6 +76,20 @@ The following operational endpoints are available:
 ### Graceful Shutdown
 The API correctly handles `SIGTERM` and `SIGINT` signals. Upon termination, it stops accepting new requests and signals the `AsyncJobManager` to perform a graceful shutdown, ensuring running tasks are either safely aborted or completed.
 
+### Model Context Protocol (MCP) Integration
+The agent supports dynamic tool discovery and execution via the **Model Context Protocol**. External MCP servers can be configured to provide additional capabilities without modifying agent source code.
+To configure MCP servers, provide a JSON string map in the `MCP_SERVERS` environment variable:
+```json
+{
+  "my_server": {
+    "command": "python",
+    "args": ["-m", "my_mcp_server"],
+    "enabled": true
+  }
+}
+```
+The agent automatically discovers and registers these tools under the `mcp.<server_name>.<tool_name>` namespace.
+
 ### Architectural Constraints
 > [!IMPORTANT]
 > **Single Process Limitation**: Currently, the system relies on an in-memory `AsyncJobManager` to orchestrate multi-agent execution. Due to this architectural constraint, **only ONE application process** (one Uvicorn worker) is officially supported. Deploying multiple processes without an external broker (e.g., Redis/Celery) will result in inconsistent job states and execution tracking. Future architectural phases will address horizontal scaling.

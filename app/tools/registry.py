@@ -25,8 +25,17 @@ class ToolRegistry:
         result = registry.execute(tool_call)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, include_mcp: bool = True) -> None:
         self._tools: dict[str, BaseTool] = {}
+        
+        if include_mcp:
+            try:
+                from app.mcp.registry import get_mcp_registry
+                mcp_registry = get_mcp_registry()
+                for tool in mcp_registry.get_tools():
+                    self.register(tool)
+            except Exception as e:
+                logger.error("Failed to load MCP tools into registry", extra={"error": str(e)})
 
     # ------------------------------------------------------------------ #
     # Registration

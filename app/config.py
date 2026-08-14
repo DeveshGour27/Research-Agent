@@ -249,6 +249,10 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------ #
     # Tools
     # ------------------------------------------------------------------ #
+    mcp_servers: str = Field(
+        default="{}",
+        description="JSON string representing a dictionary of MCP server configurations.",
+    )
     web_search_provider: str = Field(
         default="tavily",
         description="Provider used for the WebSearchTool (e.g., tavily).",
