@@ -7,6 +7,7 @@ from pathlib import Path
 
 from app.agent import Agent
 from app.exceptions import MemoryReadError
+from app.llm.models import ModelResponse
 from app.llm.base import (
     ChatMessage,
     ChatResponse,
@@ -19,44 +20,33 @@ from app.tools.registry import ToolRegistry
 
 
 class ScriptedProvider(LLMProvider):
-    """Deterministic provider for memory and agent integration tests."""
+    @property
+    def provider_id(self) -> str: return "scripted"
 
     def __init__(
         self,
         responses: Sequence[LLMResponse],
-        generation_responses: Sequence[ChatResponse] | None = None,
+        generation_responses: Sequence[ModelResponse] | None = None,
     ) -> None:
         self._responses = list(responses)
         self._generation_responses = list(generation_responses or [])
         self.calls = 0
         self.generation_calls = 0
 
-    def generate(
-        self,
-        messages: Sequence[ChatMessage],
-    ) -> ChatResponse:
-        if self.generation_calls >= len(self._generation_responses):
-            raise AssertionError(
-                "No scripted response left for this provider generation call."
-            )
-
-        response = self._generation_responses[self.generation_calls]
-        self.generation_calls += 1
-        return response
-
-    def generate_with_tools(
-        self,
-        messages: list[dict[str, object]],
-        tools: list[dict[str, object]],
-    ) -> LLMResponse:
-        if self.calls >= len(self._responses):
-            raise AssertionError(
-                "No scripted response left for this provider tool call."
-            )
-
-        response = self._responses[self.calls]
-        self.calls += 1
-        return response
+    def generate(self, request, model_id="test") -> LLMResponse:
+        from app.llm.models import TaskType
+        if getattr(request, "task_type", None) == TaskType.REFLECTION:
+            if self.generation_calls >= len(self._generation_responses):
+                raise AssertionError("No scripted response left for this provider generation call.")
+            response = self._generation_responses[self.generation_calls]
+            self.generation_calls += 1
+            return response
+        else:
+            if self.calls >= len(self._responses):
+                raise AssertionError("No scripted response left for this provider call.")
+            response = self._responses[self.calls]
+            self.calls += 1
+            return response
 
 
 def _store(path: Path) -> JsonFileMemoryStore:
@@ -581,7 +571,7 @@ def test_extractor_parses_create_operation() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -611,7 +601,7 @@ def test_extractor_parses_update_operation() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -652,7 +642,7 @@ def test_extractor_parses_ignore_operation() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": false, '
@@ -682,7 +672,7 @@ def test_extractor_rejects_invalid_update_memory_id() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -723,7 +713,7 @@ def test_extractor_invalid_json_fails_safely() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content="this is not json",
             )
@@ -748,7 +738,7 @@ def test_extractor_invalid_operation_fails_safely() -> None:
     provider = ScriptedProvider(
         [],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -789,7 +779,7 @@ def test_agent_applies_update_operation(tmp_path: Path) -> None:
             )
         ],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -831,7 +821,7 @@ def test_agent_applies_create_operation(tmp_path: Path) -> None:
             )
         ],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '
@@ -878,7 +868,7 @@ def test_agent_ignores_ignore_operation(tmp_path: Path) -> None:
             )
         ],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": false, '
@@ -921,7 +911,7 @@ def test_agent_memory_update_failure_does_not_fail_run(
             )
         ],
         generation_responses=[
-            ChatResponse(
+            ModelResponse(
                 model="fake-model",
                 content=(
                     '{"should_store": true, '

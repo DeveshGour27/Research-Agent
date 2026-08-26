@@ -1,8 +1,6 @@
 ﻿from __future__ import annotations
-
 import json
 from typing import Any
-
 from app.config import Settings
 from app.exceptions import ConfigurationError, LLMAPIError, LLMResponseParseError
 from app.llm.models import ModelRequest, ModelResponse, ToolCall
@@ -11,22 +9,21 @@ from app.logger import get_logger
 
 logger = get_logger(__name__)
 
-class GroqProvider(ModelProvider):
+class OpenAIProvider(ModelProvider):
     @property
     def provider_id(self) -> str:
-        return "groq"
+        return "openai"
 
     def __init__(self, configuration: Settings) -> None:
-        if not configuration.groq_api_key:
-            raise ConfigurationError("GROQ_API_KEY must be configured.", details={"provider": "groq"})
+        if not getattr(configuration, "openai_api_key", None):
+            raise ConfigurationError("openai_api_key must be configured.", details={"provider": "openai"})
         try:
-            import groq
-            self._client = groq.Groq(api_key=configuration.groq_api_key, max_retries=0)
+            import openai
+            self._client = openai.OpenAI(api_key=configuration.openai_api_key, max_retries=0)
         except ImportError as e:
-            raise ConfigurationError("The 'groq' package is not installed.") from e
+            raise ConfigurationError("The 'openai' package is not installed.") from e
 
     def generate(self, request: ModelRequest, model_id: str) -> ModelResponse:
-        # Convert Request to Groq payload
         messages = list(request.messages)
         if request.system_instructions:
             messages.insert(0, {"role": "system", "content": request.system_instructions})
@@ -51,10 +48,10 @@ class GroqProvider(ModelProvider):
         except Exception as error:
             transient = self._is_transient_sdk_error(error)
             raise LLMAPIError(
-                "The Groq request failed.",
+                "The OpenAI request failed.",
                 status_code=getattr(error, "status_code", None),
                 details={
-                    "provider": "groq",
+                    "provider": "openai",
                     "model": model_id,
                     "error_type": type(error).__name__,
                     "transient": transient,
@@ -75,8 +72,8 @@ class GroqProvider(ModelProvider):
             finish_reason = choice.finish_reason
         except (AttributeError, IndexError) as error:
             raise LLMResponseParseError(
-                "The Groq response structure was unexpected or choice was empty.",
-                details={"provider": "groq", "model": model_id},
+                "The OpenAI response structure was unexpected or choice was empty.",
+                details={"provider": "openai", "model": model_id},
             ) from error
 
         content = getattr(message, "content", None)
@@ -107,8 +104,8 @@ class GroqProvider(ModelProvider):
             output_tokens=completion_tokens,
             total_tokens=total_tokens,
             model=model_id,
-            provider="groq",
-            raw_response=None, # Exclude raw object to avoid serialization issues
+            provider="openai",
+            raw_response=None,
         )
 
     @staticmethod
@@ -117,4 +114,3 @@ class GroqProvider(ModelProvider):
         if status_code in (408, 429): return True
         if isinstance(status_code, int) and 500 <= status_code <= 599: return True
         return isinstance(error, (ConnectionError, TimeoutError)) or type(error).__name__ in {"APIConnectionError", "APITimeoutError", "RateLimitError"}
-

@@ -13,36 +13,29 @@ from app.tools.registry import ToolRegistry
 
 
 class DualScriptedProvider(LLMProvider):
-    """Provider with independent scripts for agent turns and extraction turns."""
-
-    def __init__(
-        self,
-        *,
-        agent_responses: Sequence[LLMResponse],
-        extractor_payloads: Sequence[str],
-    ) -> None:
-        self._agent_responses = list(agent_responses)
-        self._extractor_payloads = list(extractor_payloads)
+    @property
+    def provider_id(self) -> str: return "scripted"
+    
+    def __init__(self, agent_responses: list[LLMResponse], extractor_payloads: list[str]) -> None:
+        self._agent_responses = agent_responses
+        self._extractor_payloads = extractor_payloads
         self._agent_index = 0
         self._extractor_index = 0
 
-    def generate(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-        if self._extractor_index >= len(self._extractor_payloads):
-            raise AssertionError("No extractor payload left for this provider call.")
-        payload = self._extractor_payloads[self._extractor_index]
-        self._extractor_index += 1
-        return ChatResponse(content=payload, model="extractor-model")
-
-    def generate_with_tools(
-        self,
-        messages: list[dict[str, object]],
-        tools: list[dict[str, object]],
-    ) -> LLMResponse:
-        if self._agent_index >= len(self._agent_responses):
-            raise AssertionError("No agent response left for this provider call.")
-        response = self._agent_responses[self._agent_index]
-        self._agent_index += 1
-        return response
+    def generate(self, request, model_id="test") -> LLMResponse:
+        from app.llm.models import TaskType, ModelResponse
+        if getattr(request, "task_type", None) == TaskType.REFLECTION:
+            if self._extractor_index >= len(self._extractor_payloads):
+                raise AssertionError("No extractor payload left for this provider call.")
+            payload = self._extractor_payloads[self._extractor_index]
+            self._extractor_index += 1
+            return ModelResponse(content=payload, model="extractor-model")
+        else:
+            if self._agent_index >= len(self._agent_responses):
+                raise AssertionError("No agent response left for this provider call.")
+            response = self._agent_responses[self._agent_index]
+            self._agent_index += 1
+            return response
 
 
 def _registry_with_calculator() -> ToolRegistry:

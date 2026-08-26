@@ -107,10 +107,10 @@ def test_reranker_wiring_and_fallback(monkeypatch):
     r2 = Retriever(embedding_provider_name="mock")
     assert isinstance(r2.reranker, NoopReranker)
 
-    # Test neural reranker fallback to lexical when LLM fails: monkeypatch create_chat_provider to raise
-    from app.llm.factory import create_chat_provider
+    # Test neural reranker fallback to lexical when LLM fails: monkeypatch create_model_gateway to raise
+    from app.llm.factory import create_model_gateway
 
-    monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: (_ for _ in ()).throw(Exception("fail")))
+    monkeypatch.setattr("app.llm.factory.create_model_gateway", lambda cfg: (_ for _ in ()).throw(Exception("fail")))
     nr = NeuralReranker()
     items = [("id1", 0.1, {"text": "alpha beta"}), ("id2", 0.2, {"text": "beta gamma alpha"})]
     out = nr.rerank("alpha", items)

@@ -1,4 +1,4 @@
-"""Evaluator for evidence sufficiency using an LLM."""
+﻿"""Evaluator for evidence sufficiency using an LLM."""
 
 import json
 from typing import List
@@ -6,8 +6,8 @@ from typing import List
 from pydantic import ValidationError
 
 from app.config import settings
-from app.llm.base import ChatMessage
-from app.llm.factory import create_chat_provider
+from app.llm.models import ModelRequest, TaskType
+from app.llm.factory import create_model_gateway
 from app.logger import get_logger
 from app.reflection.contracts import ReflectionDecision, ReflectionResult
 from rag.hybrid_search import Retrieved
@@ -18,7 +18,7 @@ class ReflectionEvaluator:
     """Evaluates retrieved evidence against the user query."""
 
     def __init__(self) -> None:
-        self.provider = create_chat_provider(settings)
+        self.provider = create_model_gateway(settings)
         self.system_prompt = (
             "You are an expert AI reflection module. Your task is to evaluate whether "
             "the provided retrieved evidence is sufficient to accurately answer the user's query.\n\n"
@@ -53,8 +53,8 @@ class ReflectionEvaluator:
         )
 
         messages = [
-            ChatMessage(role="system", content=self.system_prompt),
-            ChatMessage(role="user", content=user_prompt)
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": user_prompt}
         ]
 
         try:
@@ -92,3 +92,4 @@ class ReflectionEvaluator:
                 reason="Unexpected error during reflection evaluation.",
                 retry_retrieval=False
             )
+

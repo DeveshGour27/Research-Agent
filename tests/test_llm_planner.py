@@ -42,12 +42,12 @@ def create_mock_response(arguments_dict: dict | None = None, malformed_json: boo
 
     return LLMResponse(
         model="test",
-        tool_call=ToolCall(id="call_1", name="submit_plan", arguments=args),
+        tool_calls=[ToolCall(id="call_1", name="submit_plan", arguments=args)],
     )
 
 
 def test_valid_single_step_plan(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -79,7 +79,7 @@ def test_valid_single_step_plan(planner: LLMPlanner, mock_provider: MagicMock, c
 
 
 def test_valid_multi_step_dag(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -104,25 +104,25 @@ def test_valid_multi_step_dag(planner: LLMPlanner, mock_provider: MagicMock, con
 
 
 def test_missing_tool_call(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response(no_tool_call=True)
+    mock_provider.generate.return_value = create_mock_response(no_tool_call=True)
     with pytest.raises(PlanCreationError, match="submit_plan"):
         planner.generate_plan("Do something", context)
 
 
 def test_malformed_json(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response(malformed_json=True)
+    mock_provider.generate.return_value = create_mock_response(malformed_json=True)
     with pytest.raises(PlanCreationError, match="malformed JSON arguments"):
         planner.generate_plan("Do something", context)
 
 
 def test_empty_tool_call_arguments(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({})
+    mock_provider.generate.return_value = create_mock_response({})
     with pytest.raises(PlanCreationError, match="missing 'steps'"):
         planner.generate_plan("Do something", context)
 
 
 def test_missing_required_plan_fields(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "description": "No step_id"
@@ -134,7 +134,7 @@ def test_missing_required_plan_fields(planner: LLMPlanner, mock_provider: MagicM
 
 
 def test_duplicate_step_ids(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -153,7 +153,7 @@ def test_duplicate_step_ids(planner: LLMPlanner, mock_provider: MagicMock, conte
 
 
 def test_missing_dependency(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -168,7 +168,7 @@ def test_missing_dependency(planner: LLMPlanner, mock_provider: MagicMock, conte
 
 
 def test_cyclic_dependency(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -189,13 +189,13 @@ def test_cyclic_dependency(planner: LLMPlanner, mock_provider: MagicMock, contex
 
 
 def test_empty_plan(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({"steps": []})
+    mock_provider.generate.return_value = create_mock_response({"steps": []})
     with pytest.raises(PlanCreationError, match="at least one step"):
         planner.generate_plan("Do something", context)
 
 
 def test_empty_goal(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [{"step_id": "1", "description": "1", "task_type": "web_search"}]
     })
     with pytest.raises(PlanCreationError, match="goal must not be empty"):
@@ -203,7 +203,7 @@ def test_empty_goal(planner: LLMPlanner, mock_provider: MagicMock, context: Agen
 
 
 def test_unknown_task_type(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [{"step_id": "1", "description": "1", "task_type": "hack_mainframe"}]
     })
     with pytest.raises(PlanCreationError, match="unknown task type: 'hack_mainframe'"):
@@ -211,7 +211,7 @@ def test_unknown_task_type(planner: LLMPlanner, mock_provider: MagicMock, contex
 
 
 def test_unknown_capability(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [{"step_id": "1", "description": "1", "task_type": "web_search", "required_capabilities": ["hack_mainframe"]}]
     })
     with pytest.raises(PlanCreationError, match="unknown capability: 'hack_mainframe'"):
@@ -220,7 +220,7 @@ def test_unknown_capability(planner: LLMPlanner, mock_provider: MagicMock, conte
 
 def test_excessive_step_count(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
     planner._max_plan_steps = 2
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {"step_id": "1", "description": "1", "task_type": "web_search"},
             {"step_id": "2", "description": "2", "task_type": "rag_search"},
@@ -232,13 +232,13 @@ def test_excessive_step_count(planner: LLMPlanner, mock_provider: MagicMock, con
 
 
 def test_llm_provider_exception(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.side_effect = Exception("API Error")
+    mock_provider.generate.side_effect = Exception("API Error")
     with pytest.raises(PlanCreationError, match="LLM provider failed"):
         planner.generate_plan("Do something", context)
 
 
 def test_replanning_context(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [{"step_id": "1", "description": "1", "task_type": "web_search"}]
     })
     
@@ -248,10 +248,10 @@ def test_replanning_context(planner: LLMPlanner, mock_provider: MagicMock, conte
     plan = planner.generate_plan("Do something", context, prev_plan, failure_ctx)
     
     # Verify the prompt includes replanning instructions
-    calls = mock_provider.generate_with_tools.call_args_list
+    calls = mock_provider.generate.call_args_list
     assert len(calls) == 1
-    messages = calls[0][0][0]
-    user_prompt = messages[1]["content"]
+    request = calls[0][0][0]
+    user_prompt = request.messages[1]["content"]
     assert "REPLANNING CONTEXT" in user_prompt
     assert "old_1" in user_prompt
     assert "Tool crashed" in user_prompt
@@ -259,7 +259,7 @@ def test_replanning_context(planner: LLMPlanner, mock_provider: MagicMock, conte
 
 def test_event_not_emitted_on_validation_failure(planner: LLMPlanner, mock_provider: MagicMock, context: AgentExecutionContext) -> None:
     # E.g. cyclic dependency
-    mock_provider.generate_with_tools.return_value = create_mock_response({
+    mock_provider.generate.return_value = create_mock_response({
         "steps": [
             {"step_id": "1", "description": "1", "task_type": "web_search", "dependencies": ["2"]},
             {"step_id": "2", "description": "2", "task_type": "web_search", "dependencies": ["1"]},

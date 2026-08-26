@@ -107,7 +107,7 @@ def test_neural_reranker_fallback_deterministic_sort(monkeypatch):
     # NeuralReranker shouldn't fail if we give it bad JSON, it should fallback to lexical reranker.
     # If the text doesn't contain the keyword, lexical reranker score is 0.
     # It will fallback to hybrid score DESC -> chunk_id ASC.
-    monkeypatch.setattr(app.llm.factory, "create_chat_provider", lambda s: MockProvider("Bad Output"))
+    monkeypatch.setattr(app.llm.factory, "create_model_gateway", lambda s: MockProvider("Bad Output"))
     
     nr = NeuralReranker()
     
@@ -128,7 +128,7 @@ def test_neural_reranker_fallback_deterministic_sort(monkeypatch):
 def test_neural_reranker_missing_score(monkeypatch):
     import app.llm.factory
     # LLM outputs ordering but no numeric scores: ["id2", "id1", "id3"]
-    monkeypatch.setattr(app.llm.factory, "create_chat_provider", lambda s: MockProvider('["id2", "id1", "id3"]'))
+    monkeypatch.setattr(app.llm.factory, "create_model_gateway", lambda s: MockProvider('["id2", "id1", "id3"]'))
     nr = NeuralReranker()
     items = [
         ("id1", 0.9, {"text": "A", "hybrid_score": 0.9}),
@@ -174,7 +174,7 @@ def test_adversarial_keyword_trap(monkeypatch):
 
     import app.llm.factory
     # Reranker sees the text and places the semantically relevant one first!
-    monkeypatch.setattr(app.llm.factory, "create_chat_provider", lambda s: MockProvider('[{"id": "relevant", "score": 0.99}, {"id": "trap", "score": 0.1}]'))
+    monkeypatch.setattr(app.llm.factory, "create_model_gateway", lambda s: MockProvider('[{"id": "relevant", "score": 0.99}, {"id": "trap", "score": 0.1}]'))
     
     # Force defaults
     monkeypatch.setattr(settings, "top_k_retrieval", 3)

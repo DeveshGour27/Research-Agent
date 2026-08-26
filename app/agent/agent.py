@@ -16,7 +16,7 @@ from app.agent.loop import AgentLoop
 from app.agent.state import AgentState
 from app.config import settings
 from app.exceptions import AgentError, MemoryReadError, MemoryWriteError
-from app.llm.router import LLMRouter
+from app.llm.gateway import ModelGateway
 from app.logger import get_logger
 from app.hitl.service import HITLService
 from app.memory import (
@@ -64,7 +64,7 @@ class Agent(BaseAgent):
 
     def __init__(
         self,
-        provider: LLMProvider,
+        provider: ModelGateway,
         registry: ToolRegistry,
         max_iterations: int = _DEFAULT_MAX_ITERATIONS,
         user_id: str | None = None,
@@ -74,7 +74,7 @@ class Agent(BaseAgent):
         memory_top_k: int = _DEFAULT_MEMORY_TOP_K,
         hitl_service: HITLService | None = None,
     ) -> None:
-        self._router = LLMRouter(provider)
+        self._router = provider
         self._registry = registry
         self._max_iterations = max_iterations
         self._hitl_service = hitl_service

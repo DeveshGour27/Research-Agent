@@ -1,4 +1,4 @@
-import traceback
+﻿import traceback
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 from enum import Enum
@@ -8,7 +8,8 @@ from app.agent.execution_context import AgentExecutionContext
 from app.agent.communicator import AgentCommunicator
 from app.tools.registry import ToolRegistry
 from app.tools.base import ToolResult
-from app.llm.base import LLMProvider, ChatMessage, ChatResponse, LLMResponse, ToolCall
+from app.llm.provider import ModelProvider
+from app.llm.models import ModelRequest, ModelResponse, ToolCall
 from app.agent.state import AgentState
 
 def _reject_callables(data: Any) -> None:
@@ -196,20 +197,15 @@ class ReplayCommunicator(AgentCommunicator):
             metadata={}
         )
 
-class ReplayLLMProvider(LLMProvider):
+class ReplayLLMProvider(ModelProvider):
+    @property
+    def provider_id(self) -> str: return "replay"
     def __init__(self, recorded_responses: List[RecordedLLMResponse]):
         self._recorded_responses = list(recorded_responses)
         self._index = 0
 
-    def generate(self, messages: Sequence[ChatMessage]) -> ChatResponse:
-        if self._index >= len(self._recorded_responses):
-            raise ReplayMismatchError("Missing recorded LLM response")
-            
-        recorded = self._recorded_responses[self._index]
-        self._index += 1
-        return ChatResponse(content=recorded.content or "", model=recorded.model)
         
-    def generate_with_tools(self, messages: List[Dict[str, Any]], tools: List[Dict[str, Any]]) -> LLMResponse:
+    def generate(self, request: ModelRequest, model_id: str = "test") -> ModelResponse:
         if self._index >= len(self._recorded_responses):
             raise ReplayMismatchError("Missing recorded LLM response")
             
@@ -224,12 +220,12 @@ class ReplayLLMProvider(LLMProvider):
                 arguments=recorded.tool_call.get("arguments", {})
             )
             
-        return LLMResponse(
+        return ModelResponse(provider="replay",
             model=recorded.model,
             content=recorded.content,
-            tool_call=tc,
-            prompt_tokens=recorded.prompt_tokens,
-            completion_tokens=recorded.completion_tokens
+            tool_calls=[tc] if tc else [],
+            input_tokens=recorded.prompt_tokens,
+            output_tokens=recorded.completion_tokens
         )
 
 class ReplayEngine:
@@ -345,3 +341,5 @@ class ReplayEngine:
                 self.agent._loop._router._provider = original_state["_loop_provider"]
             if "_communicator" in original_state:
                 self.agent._communicator = original_state["_communicator"]
+
+

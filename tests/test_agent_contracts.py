@@ -14,18 +14,17 @@ from app.tools.registry import ToolRegistry
 
 
 class ScriptedProvider(LLMProvider):
+    @property
+    def provider_id(self) -> str: return "scripted"
+
     def __init__(self, responses: Sequence[LLMResponse]) -> None:
         self._responses = list(responses)
         self.calls = 0
 
-    def generate(self, messages: Sequence[ChatMessage]) -> ChatResponse:  # pragma: no cover
-        raise AssertionError("ScriptedProvider.generate should not be used in these tests.")
-
-    def generate_with_tools(
-        self,
-        messages: list[dict[str, object]],
-        tools: list[dict[str, object]],
-    ) -> LLMResponse:
+    
+    def generate(self, request, model_id="test") -> LLMResponse:
+        messages = request.messages
+        tools = request.tools
         if self.calls >= len(self._responses):
             raise AssertionError("No scripted response left for this provider call.")
         response = self._responses[self.calls]

@@ -1,4 +1,4 @@
-"""LLMPlanner implementation for Phase 6.3."""
+﻿"""LLMPlanner implementation for Phase 6.3."""
 
 from __future__ import annotations
 
@@ -11,7 +11,8 @@ from app.agent.planner import Planner
 from app.agent.validator import PlanValidator
 from app.config import settings
 from app.exceptions import PlanCreationError, PlanValidationError
-from app.llm.base import ChatMessage, LLMProvider, ToolCall
+from app.llm.gateway import ModelGateway
+from app.llm.models import ModelRequest, TaskType, ToolCall
 from app.logger import get_logger
 from app.observability.events import PlanGeneratedEvent
 
@@ -75,7 +76,7 @@ class LLMPlanner(Planner):
     server-side constraints, and validates it before returning.
     """
 
-    def __init__(self, provider: LLMProvider, validator: PlanValidator | None = None) -> None:
+    def __init__(self, provider: ModelGateway, validator: PlanValidator | None = None) -> None:
         self._provider = provider
         self._validator = validator or PlanValidator()
         self._max_plan_steps = settings.max_plan_steps
@@ -100,7 +101,8 @@ class LLMPlanner(Planner):
 
         # 2. Call LLM provider
         try:
-            llm_response = self._provider.generate_with_tools(messages, tools)
+            request = ModelRequest(messages=messages, tools=tools, tool_choice={"type": "function", "function": {"name": "submit_plan"}}, task_type=TaskType.PLANNING)
+            llm_response = self._provider.generate(request)
         except Exception as e:
             raise PlanCreationError(f"LLM provider failed during plan generation: {e}") from e
 
@@ -212,3 +214,4 @@ class LLMPlanner(Planner):
                 prompt += f"- Step {result.step_id}: {result.error}\n"
         
         return prompt
+

@@ -331,9 +331,7 @@ class NeuralReranker(Reranker):
         Tuple[str, Optional[float], dict]
     ]:
         from app.config import settings
-        from app.llm.factory import (
-            create_chat_provider,
-        )
+        from app.llm.factory import create_model_gateway
         from app.llm.base import ChatMessage
         from app.logger import get_logger
 
@@ -345,7 +343,7 @@ class NeuralReranker(Reranker):
             return []
 
         try:
-            provider = create_chat_provider(
+            provider = create_model_gateway(
                 settings
             )
 

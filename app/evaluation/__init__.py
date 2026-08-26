@@ -31,3 +31,18 @@ __all__ = [
     "ReplayResult",
     "ReplayMismatchError",
 ]
+from app.evaluation.benchmark_dataset import BenchmarkCase, BenchmarkDataset
+from app.evaluation.benchmark_metrics import DeterministicMetrics
+from app.evaluation.benchmark_evaluators import LLMJudgeEvaluator
+from app.evaluation.benchmark_runner import BenchmarkRunner, BenchmarkRunResult
+from app.evaluation.benchmark_reporters import BenchmarkReporter
+
+__all__.extend([
+    "BenchmarkCase",
+    "BenchmarkDataset",
+    "DeterministicMetrics",
+    "LLMJudgeEvaluator",
+    "BenchmarkRunner",
+    "BenchmarkRunResult",
+    "BenchmarkReporter"
+])

@@ -1,9 +1,10 @@
-"""Probabilistic LLM Judge evaluator."""
+﻿"""Probabilistic LLM Judge evaluator."""
 
 import json
 from typing import Any, Dict, List, Optional
 
-from app.llm.base import LLMProvider
+from app.llm.gateway import ModelGateway
+from app.llm.models import ModelRequest, TaskType
 from app.evaluation.contracts import GoldenCase, JudgeResult
 from app.agent.contracts import AgentResult
 from app.logger import get_logger
@@ -14,7 +15,7 @@ logger = get_logger(__name__)
 class LLMJudge:
     """Evaluates agent responses probabilistically using an LLM provider."""
 
-    def __init__(self, provider: LLMProvider):
+    def __init__(self, provider: ModelGateway):
         self._provider = provider
         
         self._tool_schema = {
@@ -135,3 +136,5 @@ class LLMJudge:
                 judge_model=model,
                 error="TYPE_ERROR"
             )
+
+

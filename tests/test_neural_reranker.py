@@ -34,7 +34,7 @@ def make_items():
     ('["unknown","id2"]', ["id2", "id1", "id3"]),
 ])
 def test_neural_reranker_parsing_and_ordering(monkeypatch, content, expected_order):
-    monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: FakeProvider(content))
+    monkeypatch.setattr("app.llm.factory.create_model_gateway", lambda cfg: FakeProvider(content))
     nr = NeuralReranker()
     items = make_items()
     out = nr.rerank("query", items)
@@ -43,13 +43,13 @@ def test_neural_reranker_parsing_and_ordering(monkeypatch, content, expected_ord
 
 def test_neural_reranker_empty_or_invalid(monkeypatch):
     # empty -> fallback
-    monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: FakeProvider(""))
+    monkeypatch.setattr("app.llm.factory.create_model_gateway", lambda cfg: FakeProvider(""))
     nr = NeuralReranker()
     items = make_items()
     out = nr.rerank("query", items)
     assert set(o[0] for o in out) == set(i[0] for i in items)
 
     # invalid JSON -> fallback
-    monkeypatch.setattr("app.llm.factory.create_chat_provider", lambda cfg: FakeProvider("not json"))
+    monkeypatch.setattr("app.llm.factory.create_model_gateway", lambda cfg: FakeProvider("not json"))
     out2 = nr.rerank("query", items)
     assert set(o[0] for o in out2) == set(i[0] for i in items)

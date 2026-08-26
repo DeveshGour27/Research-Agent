@@ -76,6 +76,8 @@ class EvaluationEngine:
             agent_metadata = replay_res.details.get("metadata", {})
             replay_mismatch = replay_res.status == ReplayStatus.REPLAY_MISMATCH
             fatal_error = replay_res.status == ReplayStatus.FAILED
+            if fatal_error:
+                print(f"REPLAY ENGINE FATAL ERROR: {replay_res.details.get("traceback", "")}")
             
             # Create a mock agent result for the judge if we succeeded
             result = AgentResult(

@@ -6,7 +6,8 @@ import json
 from typing import Any
 
 from app.config import settings
-from app.llm.router import LLMRouter
+from app.llm.gateway import ModelGateway
+from app.llm.models import ModelRequest, ModelCapability, TaskType
 from app.logger import get_logger
 from app.tools.base import ToolResult
 from app.tools.registry import ToolRegistry
@@ -49,7 +50,7 @@ class AgentLoop:
 
     def __init__(
         self,
-        router: LLMRouter,
+        router: ModelGateway,
         registry: ToolRegistry,
         max_iterations: int | None = None,
         hitl_service: HITLService | None = None,
@@ -104,7 +105,8 @@ class AgentLoop:
                 extra={"iteration": state.iteration, "messages": len(state.messages)},
             )
 
-            llm_response = self._router.generate(state.messages, tool_schemas)
+            request = ModelRequest(messages=state.messages, tools=tool_schemas, task_type=TaskType.TOOL_CALLING if tool_schemas else TaskType.GENERAL)
+            llm_response = self._router.generate(request)
             state.prompt_tokens += llm_response.prompt_tokens
             state.completion_tokens += llm_response.completion_tokens
 

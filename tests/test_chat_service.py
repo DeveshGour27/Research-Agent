@@ -15,7 +15,8 @@ class FakeProvider(LLMProvider):
     def __init__(self) -> None:
         self.messages: list[ChatMessage] = []
 
-    def generate(self, messages: list[ChatMessage]) -> ChatResponse:
+    def generate(self, request, model_id="test") -> ChatResponse:
+        messages = request.messages
         self.messages = list(messages)
         return ChatResponse(content="Hello", model="fake-model")
 
@@ -25,13 +26,10 @@ def test_chat_appends_user_input_to_history_sent_to_provider() -> None:
     provider = FakeProvider()
     service = ChatService(provider)
 
-    result = service.chat([ChatMessage(role="user", content="Earlier")], "Current")
+    result = service.chat([{"role": "user", "content": "Earlier"}], "Current")
 
     assert result.content == "Hello"
-    assert provider.messages == [
-        ChatMessage(role="user", content="Earlier"),
-        ChatMessage(role="user", content="Current"),
-    ]
+    assert provider.messages == [{"role": "user", "content": "Earlier"}, {"role": "user", "content": "Current"}]
 
 
 @pytest.mark.parametrize("user_input", ["", "   "])

@@ -1,23 +1,24 @@
-"""Extensible LLM chat layer for the application."""
-
-from app.llm.base import (
-    ChatMessage,
-    ChatResponse,
-    LLMProvider,
-    LLMResponse,
-    ToolCall,
+﻿from app.llm.models import (
+    ModelRequest,
+    ModelResponse,
+    ModelCapability,
+    TaskType,
+    ModelProfile,
+    ToolCall
 )
-from app.llm.factory import create_chat_provider
-from app.llm.router import LLMRouter
-from app.llm.service import ChatService
+from app.llm.provider import ModelProvider
+from app.llm.factory import create_model_gateway
+from app.llm.gateway import ModelGateway, ModelRouter
 
 __all__ = [
-    "ChatMessage",
-    "ChatResponse",
-    "ChatService",
-    "LLMResponse",
-    "LLMRouter",
-    "LLMProvider",
+    "ModelRequest",
+    "ModelResponse",
+    "ModelCapability",
+    "TaskType",
+    "ModelProfile",
+    "ModelProvider",
+    "ModelGateway",
+    "ModelRouter",
     "ToolCall",
-    "create_chat_provider",
+    "create_model_gateway",
 ]

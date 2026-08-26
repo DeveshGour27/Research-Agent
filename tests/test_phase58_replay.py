@@ -56,7 +56,7 @@ class MockAgent(BaseAgent):
         
     def execute(self, request: AgentRequest) -> AgentResult:
         # Generate some text from the deeply nested provider
-        response = self._loop._router._provider.generate_with_tools([{"role": "user", "content": request.input_text}], [])
+        response = self._loop._router._provider.generate([{"role": "user", "content": request.input_text}], [])
         
         # Make a tool call if the LLM returned one
         if response.tool_call:
@@ -187,13 +187,13 @@ def test_replay_llm_provider_success():
     rec = RecordedLLMResponse(model="test", content="hi", tool_call=None)
     provider = ReplayLLMProvider([rec])
     
-    res = provider.generate_with_tools([], [])
+    res = provider.generate([], [])
     assert res.content == "hi"
 
 def test_replay_llm_provider_exhausted():
     provider = ReplayLLMProvider([])
     with pytest.raises(ReplayMismatchError):
-        provider.generate_with_tools([], [])
+        provider.generate([], [])
 
 def test_replay_communicator_success():
     rec = RecordedAgentResult(request_input="sub", output="done", success=True)

@@ -88,11 +88,11 @@ def test_llm_judge_valid_tool_call():
     provider = MockLLMProvider([
         LLMResponse(
             model="test",
-            tool_call=ToolCall(
+            tool_calls=[ToolCall(
                 id="tc1",
                 name="submit_evaluation",
                 arguments={"correctness": 4.5, "relevance": 5.0, "instruction_adherence": 3.0, "reasoning": "Good"}
-            )
+                )]
         )
     ])
     judge = LLMJudge(provider)
@@ -184,6 +184,8 @@ def test_engine_live_evaluation_success():
     case = GoldenCase(case_id="1", task_input="success", constraints=GoldenConstraints(expected_success=True))
     
     summary = engine.run_suite([case])
+    if summary.passed_deterministic != 1:
+        print(summary.results[0].deterministic.failures)
     assert summary.passed_deterministic == 1
     assert summary.failed_deterministic == 0
     assert summary.results[0].deterministic.passed is True
@@ -215,6 +217,8 @@ def test_engine_live_evaluation_required_tools_success():
     engine = EvaluationEngine(agent_class=LiveTestAgent, agent_kwargs={})
     case = GoldenCase(case_id="1", task_input="use_tools", constraints=GoldenConstraints(required_tools=frozenset(["tool1"])))
     summary = engine.run_suite([case])
+    if summary.passed_deterministic != 1:
+        print(summary.results[0].deterministic.failures)
     assert summary.passed_deterministic == 1
 
 def test_engine_live_evaluation_required_tools_failure():
@@ -268,7 +272,7 @@ def test_engine_replay_evaluation_success():
         def capabilities(self): return self._capabilities
         
         def execute(self, request):
-            resp = self._loop._router._provider.generate_with_tools([], [])
+            resp = self._loop._router._provider.generate(Mock(), "test")
             return AgentResult(request=request, state=Mock(), output=resp.content, success=True)
             
     case = GoldenCase(case_id="1", task_input="do work", constraints=GoldenConstraints(), replay_record=ReplayRecord.from_dict(replay_data))
@@ -276,6 +280,8 @@ def test_engine_replay_evaluation_success():
     engine = EvaluationEngine(agent_class=DeepMockAgent, agent_kwargs={})
     summary = engine.run_suite([case])
     
+    if summary.passed_deterministic != 1:
+        print(summary.results[0].deterministic.failures)
     assert summary.passed_deterministic == 1
 
 def test_engine_replay_mismatch_failure():
@@ -311,7 +317,7 @@ def test_engine_replay_mismatch_failure():
         def capabilities(self): return self._capabilities
         
         def execute(self, request):
-            self._loop._router._provider.generate_with_tools([], [])
+            self._loop._router._provider.generate(Mock(), "test")
             return AgentResult(request=request, state=Mock(), output="", success=True)
             
     case = GoldenCase(case_id="1", task_input="do work", constraints=GoldenConstraints(), replay_record=ReplayRecord.from_dict(replay_data))
@@ -325,11 +331,11 @@ def test_probabilistic_judge_integration():
     provider = MockLLMProvider([
         LLMResponse(
             model="test",
-            tool_call=ToolCall(
+            tool_calls=[ToolCall(
                 id="tc1",
                 name="submit_evaluation",
                 arguments={"correctness": 4.5, "relevance": 5.0, "instruction_adherence": 3.0, "reasoning": "Good"}
-            )
+                )]
         )
     ])
     judge = LLMJudge(provider)
@@ -338,6 +344,8 @@ def test_probabilistic_judge_integration():
     case = GoldenCase(case_id="1", task_input="success", constraints=GoldenConstraints())
     summary = engine.run_suite([case])
     
+    if summary.passed_deterministic != 1:
+        print(summary.results[0].deterministic.failures)
     assert summary.passed_deterministic == 1
     assert summary.results[0].probabilistic is not None
     assert summary.results[0].probabilistic.correctness == 4.5
@@ -348,11 +356,11 @@ def test_deterministic_failure_overrides_judge():
     provider = MockLLMProvider([
         LLMResponse(
             model="test",
-            tool_call=ToolCall(
+            tool_calls=[ToolCall(
                 id="tc1",
                 name="submit_evaluation",
                 arguments={"correctness": 5.0, "relevance": 5.0, "instruction_adherence": 5.0, "reasoning": "Perfect"}
-            )
+                )]
         )
     ])
     judge = LLMJudge(provider)

@@ -1,4 +1,4 @@
-"""Persistent user-scoped memory and chat history storage."""
+﻿"""Persistent user-scoped memory and chat history storage."""
 
 from __future__ import annotations
 
@@ -14,7 +14,8 @@ from uuid import uuid4
 
 from app.constants import MEMORY_DIR
 from app.exceptions import MemoryReadError, MemoryWriteError
-from app.llm.base import ChatMessage, LLMProvider
+from app.llm.gateway import ModelGateway
+from app.llm.models import ModelRequest, TaskType
 from app.logger import get_logger
 
 logger = get_logger(__name__)
@@ -148,7 +149,7 @@ class MemoryStore(ABC):
 class MemoryExtractor:
     """LLM-backed extractor for long-term memory decisions."""
 
-    def __init__(self, provider: LLMProvider) -> None:
+    def __init__(self, provider: ModelGateway) -> None:
         self._provider = provider
 
     def extract(
@@ -212,10 +213,13 @@ class MemoryExtractor:
 
         try:
             response = self._provider.generate(
-                [
-                    ChatMessage(role="system", content=system_prompt),
-                    ChatMessage(role="user", content=user_prompt),
-                ]
+                ModelRequest(
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                    task_type=TaskType.REFLECTION,
+                )
             )
         except Exception as error:
             logger.warning(

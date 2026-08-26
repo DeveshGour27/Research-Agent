@@ -1,4 +1,4 @@
-"""
+﻿"""
 Configuration module for the Production AI Research Agent.
 
 Responsibilities:
@@ -150,6 +150,12 @@ class Settings(BaseSettings):
         gt=0,
         description="Rate-limit sliding window duration in seconds.",
     )
+
+    # ------------------------------------------------------------------ #
+    # Multi-Model Gateway (Phase 15)
+    # ------------------------------------------------------------------ #
+    openai_api_key: str = Field(default="", description="API key for OpenAI provider.")
+    llm_gateway_profiles_json: str = Field(default="", description="JSON string of profiles")
 
     # ------------------------------------------------------------------ #
     # Vector database

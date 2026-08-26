@@ -29,11 +29,11 @@ from app.tools.web_search import WebSearchTool
 def create_mock_llm_response(arguments_dict: dict) -> LLMResponse:
     return LLMResponse(
         model="test",
-        tool_call=ToolCall(
+        tool_calls=[ToolCall(
             id="call_1",
             name="submit_plan",
             arguments=arguments_dict,
-        ),
+        )],
     )
 
 
@@ -73,7 +73,7 @@ def test_supervisor_receives_llm_planner(supervisor: Supervisor) -> None:
 def test_end_to_end_web_research_flow(supervisor: Supervisor, monkeypatch: pytest.MonkeyPatch) -> None:
     # 1. Mock the planner's LLMProvider
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.return_value = create_mock_llm_response({
+    mock_provider.generate.return_value = create_mock_llm_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -94,14 +94,14 @@ def test_end_to_end_web_research_flow(supervisor: Supervisor, monkeypatch: pytes
 
     assert result.success is True
     assert "AI is cool." in result.output
-    mock_provider.generate_with_tools.assert_called_once()
+    mock_provider.generate.assert_called_once()
     mock_tool_execute.assert_called_once_with(query="Find info on AI")
 
 
 def test_end_to_end_rag_flow(supervisor: Supervisor, monkeypatch: pytest.MonkeyPatch) -> None:
     # 1. Mock the planner's LLMProvider
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.return_value = create_mock_llm_response({
+    mock_provider.generate.return_value = create_mock_llm_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -133,7 +133,7 @@ def test_end_to_end_rag_flow(supervisor: Supervisor, monkeypatch: pytest.MonkeyP
 def test_multi_step_dependency_execution(supervisor: Supervisor, monkeypatch: pytest.MonkeyPatch) -> None:
     # 1. Mock Planner: Web Search -> RAG Search
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.return_value = create_mock_llm_response({
+    mock_provider.generate.return_value = create_mock_llm_response({
         "steps": [
             {
                 "step_id": "step_1",
@@ -179,7 +179,7 @@ def test_multi_step_dependency_execution(supervisor: Supervisor, monkeypatch: py
 
 def test_planner_failure_propagation(supervisor: Supervisor) -> None:
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.side_effect = Exception("LLM is down")
+    mock_provider.generate.side_effect = Exception("LLM is down")
 
     request = AgentRequest(input_text="Do something")
     
@@ -196,7 +196,7 @@ def test_agent_failure_and_replanning_flow(supervisor: Supervisor, monkeypatch: 
     # First plan: Web Search
     # Second plan: RAG Search (fallback)
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.side_effect = [
+    mock_provider.generate.side_effect = [
         create_mock_llm_response({
             "steps": [
                 {"step_id": "step_1", "description": "Search web", "task_type": "web_search"}
@@ -227,7 +227,7 @@ def test_agent_failure_and_replanning_flow(supervisor: Supervisor, monkeypatch: 
 
     assert result.success is True
     assert "RAG success" in result.output
-    assert mock_provider.generate_with_tools.call_count == 2
+    assert mock_provider.generate.call_count == 2
     mock_web.assert_called_once()
     rag_agent._retriever.retrieve.assert_called_once()
 
@@ -236,7 +236,7 @@ def test_context_propagation(supervisor: Supervisor, monkeypatch: pytest.MonkeyP
     # We will verify that context IDs propagate into the agent's execute()
     
     mock_provider = supervisor._planner._provider
-    mock_provider.generate_with_tools.return_value = create_mock_llm_response({
+    mock_provider.generate.return_value = create_mock_llm_response({
         "steps": [
             {"step_id": "s1", "description": "desc", "task_type": "web_search"}
         ]

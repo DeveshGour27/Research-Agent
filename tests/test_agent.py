@@ -1,4 +1,4 @@
-"""Unit tests for the Phase 2 tool-using agent engine."""
+﻿"""Unit tests for the Phase 2 tool-using agent engine."""
 
 from __future__ import annotations
 
@@ -21,6 +21,9 @@ from app.agent.execution_context import (
 
 
 class ScriptedProvider(LLMProvider):
+    @property
+    def provider_id(self) -> str: return "scripted"
+
     """Deterministic provider for agent-loop unit tests."""
 
     def __init__(self, responses: Sequence[LLMResponse]) -> None:
@@ -28,14 +31,13 @@ class ScriptedProvider(LLMProvider):
         self.calls = 0
         self.call_messages: list[list[dict[str, object]]] = []
 
-    def generate(self, messages: Sequence[ChatMessage]) -> ChatResponse:  # pragma: no cover
-        raise AssertionError("ScriptedProvider.generate should not be used in these tests.")
-
-    def generate_with_tools(
-        self,
-        messages: list[dict[str, object]],
-        tools: list[dict[str, object]],
-    ) -> LLMResponse:
+    
+    def generate(self, request, model_id="test") -> LLMResponse:
+        from app.llm.models import TaskType, ModelResponse
+        if getattr(request, "task_type", None) == TaskType.REFLECTION:
+            return ModelResponse(model="fake-model", content='{"should_store": false}')
+        messages = request.messages
+        tools = request.tools
         self.call_messages.append([dict(message) for message in messages])
         if self.calls >= len(self._responses):
             raise AssertionError("No scripted response left for this provider call.")
@@ -93,7 +95,7 @@ def test_calculator_tool_call() -> None:
         [
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-1", name="calculate", arguments={"expression": "2 + 3"}),
+                tool_calls=[ToolCall(id="call-1", name="calculate", arguments={"expression": "2 + 3"})],
             ),
             LLMResponse(model="fake-model", content="The answer is 5."),
         ]
@@ -112,11 +114,11 @@ def test_multi_step_tool_loop() -> None:
         [
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-1", name="calculate", arguments={"expression": "10 + 5"}),
+                tool_calls=[ToolCall(id="call-1", name="calculate", arguments={"expression": "10 + 5"})],
             ),
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-2", name="calculate", arguments={"expression": "15 * 2"}),
+                tool_calls=[ToolCall(id="call-2", name="calculate", arguments={"expression": "15 * 2"})],
             ),
             LLMResponse(model="fake-model", content="Final answer: 30."),
         ]
@@ -137,7 +139,7 @@ def test_tool_failure_is_handled() -> None:
         [
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-err", name="always_fail", arguments={}),
+                tool_calls=[ToolCall(id="call-err", name="always_fail", arguments={})],
             ),
             LLMResponse(model="fake-model", content="Recovered after tool error."),
         ]
@@ -156,11 +158,13 @@ def test_model_fallback(mock_groq_class: MagicMock) -> None:
     mock_client = MagicMock()
     mock_groq_class.return_value = mock_client
     mock_client.chat.completions.create.side_effect = [
-        GroqSDKError(429),
+        GroqSDKError(400),
         _make_groq_response(content="Fallback answer."),
     ]
 
-    provider = GroqProvider(Settings(groq_api_key="fake-key"))
+    from app.llm.gateway import ModelGateway, ModelProfile, ModelRouter
+    from app.llm.models import ModelCapability
+    provider = ModelGateway(ModelRouter([ModelProfile(model_id="qwen/qwen3.6-27b", provider="groq", priority=2, capabilities=[ModelCapability.TOOL_CALLING]), ModelProfile(model_id="openai/gpt-oss-20b", provider="groq", priority=1, capabilities=[ModelCapability.TOOL_CALLING])]), {"groq": GroqProvider(Settings(groq_api_key="fake-key"))})
     state = Agent(provider, _registry_with_calculator()).run("Say hello.")
 
     assert state.finished is True
@@ -175,11 +179,11 @@ def test_max_iteration_termination() -> None:
         [
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-1", name="calculate", arguments={"expression": "1 + 1"}),
+                tool_calls=[ToolCall(id="call-1", name="calculate", arguments={"expression": "1 + 1"})],
             ),
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-2", name="calculate", arguments={"expression": "2 + 2"}),
+                tool_calls=[ToolCall(id="call-2", name="calculate", arguments={"expression": "2 + 2"})],
             ),
             LLMResponse(model="fake-model", content="This should never be reached."),
         ]
@@ -241,7 +245,7 @@ def test_tool_calls_and_results_remain_in_history() -> None:
         [
             LLMResponse(
                 model="fake-model",
-                tool_call=ToolCall(id="call-1", name="calculate", arguments={"expression": "7 + 8"}),
+                tool_calls=[ToolCall(id="call-1", name="calculate", arguments={"expression": "7 + 8"})],
             ),
             LLMResponse(model="fake-model", content="15"),
             LLMResponse(model="fake-model", content="Using previous tool result."),
@@ -438,3 +442,5 @@ def test_multiple_agents_can_share_execution_context() -> None:
 
     assert analysis_output is not None
     assert analysis_output.output == "Analysis result."
+
+

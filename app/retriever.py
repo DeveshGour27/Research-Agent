@@ -82,10 +82,10 @@ def _rewrite_query(query: str) -> str:
             )
         ):
             try:
-                from app.llm.factory import create_chat_provider
+                from app.llm.factory import create_model_gateway
                 from app.llm.base import ChatMessage
 
-                provider = create_chat_provider(
+                provider = create_model_gateway(
                     settings
                 )
 
@@ -163,10 +163,10 @@ def _decompose_query(
             try:
                 import json
 
-                from app.llm.factory import create_chat_provider
+                from app.llm.factory import create_model_gateway
                 from app.llm.base import ChatMessage
 
-                provider = create_chat_provider(
+                provider = create_model_gateway(
                     settings
                 )
 

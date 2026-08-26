@@ -57,7 +57,7 @@ def test_planner_enforces_max_steps():
         name="submit_plan",
         arguments={"steps": huge_plan_steps}
     )
-    mock_provider.generate_with_tools.return_value = mock_response
+    mock_provider.generate.return_value = mock_response
     
     planner = LLMPlanner(provider=mock_provider)
     
