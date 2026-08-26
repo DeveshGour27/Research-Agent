@@ -51,6 +51,8 @@ def test_reflection_contracts_invalid_decision():
 def test_evaluator_safe_failure_malformed_json(monkeypatch):
     monkeypatch.setenv('GROQ_API_KEY', 'test')
     """Verify evaluator falls back to safe failure on malformed LLM JSON."""
+    from app.config import settings
+    settings.groq_api_key = 'test'
     evaluator = ReflectionEvaluator()
     evaluator.provider.generate = MagicMock(return_value=MagicMock(content="Not JSON at all"))
     
@@ -64,6 +66,8 @@ def test_evaluator_safe_failure_malformed_json(monkeypatch):
 def test_evaluator_safe_failure_markdown_json(monkeypatch):
     monkeypatch.setenv('GROQ_API_KEY', 'test')
     """Verify evaluator cleans markdown JSON formatting."""
+    from app.config import settings
+    settings.groq_api_key = 'test'
     evaluator = ReflectionEvaluator()
     json_response = '```json\n{"decision": "ACCEPT", "confidence": 0.8, "reason": "Yes"}\n```'
     evaluator.provider.generate = MagicMock(return_value=MagicMock(content=json_response))
