@@ -14,7 +14,7 @@ from app.agent.contracts import AgentExecutionContext
 from app.agent.plan import Plan
 from app.db.repository import SQLJobRepository
 from app.exceptions import AgentHITLPauseException, ToolExecutionError
-from app.hitl.models import HITLPolicyDecision, HITLRequestStatus, HITLRequestType
+from app.hitl.models import HITLPolicyDecision, HITLRequestType, HITLRequestStatus
 from app.hitl.policy import HITLPolicy
 
 
@@ -189,20 +189,8 @@ class HITLService:
             
             req = session.execute(stmt).scalars().first()
             if req:
-                import json
-                data = json.loads(req.payload)
+                return Plan(**json.loads(req.payload))
                 
-                # Reconstruct Plan and PlanSteps
-                steps_data = data.get("steps", {})
-                steps = {}
-                for step_id, step_dict in steps_data.items():
-                    step_dict.pop("result", None) # Ignore result for simplicity
-                    steps[step_id] = PlanStep(**step_dict)
-                
-                data["steps"] = steps
-                data.pop("metadata", None) # Ignore metadata for simplicity
-                return Plan(**data)
-            return None   
         return None
 
     def approve_request(

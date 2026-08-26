@@ -303,7 +303,35 @@ class InvalidStateTransitionError(AgentError):
         )
         self.current_state = current_state
         self.current_state = current_state
+        self.current_state = current_state
         self.target_state = target_state
+
+
+class AgentHITLPauseException(AgentError):
+    """
+    Raised when an execution requires human-in-the-loop approval.
+    The exception bubbles up to the worker loop, pausing execution and saving state.
+    
+    Args:
+        message: Description of the pause.
+        partial_state: The current AgentState at the point of interruption.
+        request_id: The ID of the HITLRequest.
+        details: Additional structured context.
+    """
+    def __init__(
+        self,
+        message: str,
+        *,
+        request_id: str,
+        partial_state: Any = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message,
+            details={"request_id": request_id, **(details or {})},
+        )
+        self.request_id = request_id
+        self.partial_state = partial_state
 
 
 class AgentHITLPauseException(AgentError):

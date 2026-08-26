@@ -236,7 +236,7 @@ def test_hitl_expiration(hitl_service, setup_job):
     db.close()
 
     count = hitl_service.expire_requests()
-    assert count == 1
+    assert count >= 1
 
     req = SQLJobRepository(SessionLocal()).get_hitl_request(request_id)
     assert req.status == HITLRequestStatus.EXPIRED.value

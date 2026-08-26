@@ -1,3 +1,5 @@
+import os
+os.environ['GROQ_API_KEY'] = 'test'
 """Tests for Phase 9 Reflection Module and Bounded Retry."""
 
 import json
@@ -46,7 +48,8 @@ def test_reflection_contracts_invalid_decision():
             reason="Not sure",
         )
 
-def test_evaluator_safe_failure_malformed_json():
+def test_evaluator_safe_failure_malformed_json(monkeypatch):
+    monkeypatch.setenv('GROQ_API_KEY', 'test')
     """Verify evaluator falls back to safe failure on malformed LLM JSON."""
     evaluator = ReflectionEvaluator()
     evaluator.provider.generate = MagicMock(return_value=MagicMock(content="Not JSON at all"))
@@ -58,7 +61,8 @@ def test_evaluator_safe_failure_malformed_json():
     assert result.confidence == 0.0
     assert result.retry_retrieval is True
 
-def test_evaluator_safe_failure_markdown_json():
+def test_evaluator_safe_failure_markdown_json(monkeypatch):
+    monkeypatch.setenv('GROQ_API_KEY', 'test')
     """Verify evaluator cleans markdown JSON formatting."""
     evaluator = ReflectionEvaluator()
     json_response = '```json\n{"decision": "ACCEPT", "confidence": 0.8, "reason": "Yes"}\n```'

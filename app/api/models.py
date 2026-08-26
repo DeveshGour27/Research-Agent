@@ -94,3 +94,54 @@ class APIErrorResponse(BaseModel):
     """Wrapper for structured API errors."""
 
     error: APIErrorDetail
+
+
+class ResearchResultResponse(BaseModel):
+    """Response schema explicitly for job results."""
+
+    job_id: str = Field(..., description="Unique job identifier.")
+    status: str = Field(..., description="Current job execution status.")
+    result: str | None = Field(default=None, description="Final answer or output if completed successfully.")
+    error: str | None = Field(default=None, description="Error message if execution failed.")
+    completed_at: str | None = Field(default=None, description="ISO 8601 timestamp when job completed.")
+
+
+class ResearchJobEvent(BaseModel):
+    """Schema for a deterministic, frontend-safe job event."""
+
+    event_id: str = Field(..., description="Globally unique identifier for the event (e.g., jobstep:<id>).")
+    job_id: str = Field(..., description="Job identifier.")
+    event_type: str = Field(..., description="Type of event (e.g., JOB_CREATED, JOB_STARTED, TOOL_CALL, HITL_REQUESTED, JOB_COMPLETED).")
+    timestamp: str = Field(..., description="ISO 8601 timestamp.")
+    sequence: int = Field(..., description="Deterministic ordering sequence number.")
+    source: str = Field(..., description="Source of the event (job, jobstep, hitl).")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Safe event details.")
+
+
+class ResearchJobEventsResponse(BaseModel):
+    """Response schema for job events list."""
+
+    job_id: str = Field(..., description="Job identifier.")
+    events: list[ResearchJobEvent] = Field(..., description="Deterministically ordered list of events.")
+
+
+class HITLRequestResponse(BaseModel):
+    """Response schema for a single HITL request."""
+    
+    request_id: str = Field(..., description="Unique request identifier.")
+    request_type: str = Field(..., description="Type of request (TOOL or PLAN).")
+    component_name: str = Field(..., description="Name of the component requiring approval.")
+    status: str = Field(..., description="Current status of the request (PENDING, APPROVED, REJECTED, EXPIRED).")
+    created_at: str = Field(..., description="ISO 8601 timestamp.")
+    expires_at: str | None = Field(default=None, description="ISO 8601 timestamp.")
+    decided_at: str | None = Field(default=None, description="ISO 8601 timestamp.")
+    decided_by: str | None = Field(default=None, description="User ID of the decider.")
+    decision_reason: str | None = Field(default=None, description="Reason provided for the decision.")
+
+
+class HITLRequestsListResponse(BaseModel):
+    """Response schema for listing HITL requests."""
+    
+    job_id: str = Field(..., description="Job identifier.")
+    hitl_requests: list[HITLRequestResponse] = Field(..., description="List of HITL requests for the job.")
+

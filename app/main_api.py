@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router as api_router
 from app.api.health import health_router
 from app.db.database import Base, engine, SessionLocal
@@ -78,6 +79,15 @@ app.include_router(api_router)
 
 # Add request-ID propagation middleware
 app.add_middleware(RequestIDMiddleware)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def create_app() -> FastAPI:

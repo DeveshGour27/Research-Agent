@@ -13,6 +13,8 @@ from app.tools.registry import ToolRegistry
 from app.agent.state import AgentState
 from app.agent.execution_context import AgentExecutionContext
 from app.hitl.service import HITLService
+from app.agent.execution_context import AgentExecutionContext
+from app.hitl.service import HITLService
 
 logger = get_logger(__name__)
 

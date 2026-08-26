@@ -14,7 +14,11 @@ from app.api.models import (
     ResearchJobCreateResponse,
     ResearchJobStatusResponse,
     QueueStatsResponse,
+    ResearchResultResponse,
+    ResearchJobEventsResponse,
 )
+from fastapi.responses import JSONResponse, StreamingResponse
+import asyncio
 from app.db.database import get_db
 from app.db.models import User
 from app.db.repository import SQLJobRepository
@@ -48,11 +52,19 @@ def _error_response(
 
 
 @router.post(
-    "/api/v1/research/jobs",
+    "/api/v1/research",
     response_model=ResearchJobCreateResponse,
     status_code=status.HTTP_202_ACCEPTED,
     summary="Create Research Job",
     tags=["Research Jobs"],
+)
+@router.post(
+    "/api/v1/research/jobs",
+    response_model=ResearchJobCreateResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Create Research Job (Deprecated Alias)",
+    tags=["Research Jobs"],
+    deprecated=True,
 )
 def create_research_job(
     request_data: ResearchJobCreateRequest,
@@ -144,11 +156,19 @@ def create_research_job(
 
 
 @router.get(
-    "/api/v1/research/jobs/stats",
+    "/api/v1/jobs/stats",
     response_model=QueueStatsResponse,
     status_code=status.HTTP_200_OK,
     summary="Get Queue Statistics",
     tags=["Research Jobs"],
+)
+@router.get(
+    "/api/v1/research/jobs/stats",
+    response_model=QueueStatsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Queue Statistics (Deprecated Alias)",
+    tags=["Research Jobs"],
+    deprecated=True,
 )
 def get_queue_stats(
     request: Request,
@@ -164,11 +184,19 @@ def get_queue_stats(
 
 
 @router.get(
-    "/api/v1/research/jobs/{job_id}",
+    "/api/v1/jobs/{job_id}",
     response_model=ResearchJobStatusResponse,
     status_code=status.HTTP_200_OK,
     summary="Get Research Job Status",
     tags=["Research Jobs"],
+)
+@router.get(
+    "/api/v1/research/jobs/{job_id}",
+    response_model=ResearchJobStatusResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Research Job Status (Deprecated Alias)",
+    tags=["Research Jobs"],
+    deprecated=True,
 )
 def get_research_job_status(
     job_id: str,
@@ -207,11 +235,19 @@ def get_research_job_status(
 
 
 @router.post(
-    "/api/v1/research/jobs/{job_id}/cancel",
+    "/api/v1/research/{job_id}/cancel",
     response_model=ResearchJobCancelResponse,
     status_code=status.HTTP_200_OK,
     summary="Cancel Research Job",
     tags=["Research Jobs"],
+)
+@router.post(
+    "/api/v1/research/jobs/{job_id}/cancel",
+    response_model=ResearchJobCancelResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel Research Job (Deprecated Alias)",
+    tags=["Research Jobs"],
+    deprecated=True,
 )
 async def cancel_research_job(
     job_id: str,
@@ -255,10 +291,17 @@ async def cancel_research_job(
 
 
 @router.get(
-    "/api/v1/research/jobs/{job_id}/hitl",
+    "/api/v1/research/{job_id}/hitl",
     status_code=status.HTTP_200_OK,
     summary="Get HITL Requests for Job",
     tags=["Research Jobs", "HITL"],
+)
+@router.get(
+    "/api/v1/research/jobs/{job_id}/hitl",
+    status_code=status.HTTP_200_OK,
+    summary="Get HITL Requests for Job (Deprecated Alias)",
+    tags=["Research Jobs", "HITL"],
+    deprecated=True,
 )
 def get_hitl_requests(
     job_id: str,
@@ -297,10 +340,17 @@ def get_hitl_requests(
 
 
 @router.post(
-    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/approve",
+    "/api/v1/research/{job_id}/hitl/{request_id}/approve",
     status_code=status.HTTP_200_OK,
     summary="Approve HITL Request",
     tags=["Research Jobs", "HITL"],
+)
+@router.post(
+    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/approve",
+    status_code=status.HTTP_200_OK,
+    summary="Approve HITL Request (Deprecated Alias)",
+    tags=["Research Jobs", "HITL"],
+    deprecated=True,
 )
 def approve_hitl_request(
     job_id: str,
@@ -331,10 +381,17 @@ def approve_hitl_request(
 
 
 @router.post(
-    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/reject",
+    "/api/v1/research/{job_id}/hitl/{request_id}/reject",
     status_code=status.HTTP_200_OK,
     summary="Reject HITL Request",
     tags=["Research Jobs", "HITL"],
+)
+@router.post(
+    "/api/v1/research/jobs/{job_id}/hitl/{request_id}/reject",
+    status_code=status.HTTP_200_OK,
+    summary="Reject HITL Request (Deprecated Alias)",
+    tags=["Research Jobs", "HITL"],
+    deprecated=True,
 )
 def reject_hitl_request(
     job_id: str,
@@ -359,4 +416,135 @@ def reject_hitl_request(
         return _error_response(request, "INVALID_STATE", "Request cannot be rejected (already decided or job not waiting).", status.HTTP_400_BAD_REQUEST)
 
     return {"status": "success", "message": "HITL request rejected."}
+
+
+@router.get(
+    "/api/v1/research/{job_id}/result",
+    response_model=ResearchResultResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Research Job Result",
+    tags=["Research Jobs"],
+)
+def get_research_job_result(
+    job_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ResearchResultResponse | JSONResponse:
+    """Retrieve the final result of a completed research job."""
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        return _error_response(request, "JOB_NOT_FOUND", "Research job was not found.", status.HTTP_404_NOT_FOUND)
+        
+    if job.status not in ("COMPLETED", "FAILED", "CANCELLED"):
+        return _error_response(
+            request, 
+            "RESULT_UNAVAILABLE", 
+            f"Result is not yet available. Current status: {job.status}", 
+            status.HTTP_409_CONFLICT
+        )
+        
+    return ResearchResultResponse(
+        job_id=job.job_id,
+        status=job.status,
+        result=job.result if job.status == "COMPLETED" else None,
+        error=job.error_message if job.status == "FAILED" else None,
+        completed_at=job.completed_at.isoformat() if job.completed_at else None,
+    )
+
+
+@router.get(
+    "/api/v1/jobs/{job_id}/events",
+    response_model=ResearchJobEventsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get Job Events",
+    tags=["Research Jobs", "Events"],
+)
+def get_research_job_events(
+    job_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> ResearchJobEventsResponse | JSONResponse:
+    """Retrieve the deterministic event timeline for a research job."""
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        return _error_response(request, "JOB_NOT_FOUND", "Research job was not found.", status.HTTP_404_NOT_FOUND)
+        
+    from app.api.events import get_job_events
+    events = get_job_events(db, job)
+    
+    return ResearchJobEventsResponse(job_id=job.job_id, events=events)
+
+
+@router.get(
+    "/api/v1/jobs/{job_id}/events/stream",
+    summary="Stream Job Events (SSE)",
+    tags=["Research Jobs", "Events"],
+)
+async def stream_research_job_events(
+    job_id: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    last_event_id: str | None = Header(None, alias="Last-Event-ID"),
+):
+    """Stream events for a research job using Server-Sent Events (SSE)."""
+    # Verify ownership immediately
+    repo = SQLJobRepository(db)
+    job = repo.get_job(job_id=job_id, user_id=user.user_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Research job was not found.")
+
+    async def event_generator():
+        from app.api.events import get_job_events
+        import json
+        
+        last_yielded_seq = -1
+        
+        while True:
+            # Check for client disconnect
+            if await request.is_disconnected():
+                break
+                
+            # Fetch fresh state
+            # db is synchronous, but we can call it in this polling generator safely enough for Phase 12 requirements
+            db.expire_all()
+            current_job = repo.get_job(job_id=job_id, user_id=user.user_id)
+            if not current_job:
+                break
+                
+            all_events = get_job_events(db, current_job)
+            
+            # If Last-Event-ID was provided, find its sequence to resume properly
+            start_seq = 0
+            if last_event_id and last_yielded_seq == -1:
+                found = False
+                for e in all_events:
+                    if e.event_id == last_event_id:
+                        start_seq = e.sequence + 1
+                        found = True
+                        break
+                if not found:
+                    # Deterministic fallback: start from 0 if we can't find it
+                    start_seq = 0
+                last_yielded_seq = start_seq - 1
+            
+            for ev in all_events:
+                if ev.sequence > last_yielded_seq:
+                    # Yield SSE formatted string
+                    yield f"id: {ev.event_id}\n"
+                    yield f"event: {ev.event_type}\n"
+                    yield f"data: {json.dumps(ev.model_dump())}\n\n"
+                    last_yielded_seq = ev.sequence
+                    
+            if current_job.status in ("COMPLETED", "FAILED", "CANCELLED"):
+                # Job is terminal, end the stream
+                break
+                
+            await asyncio.sleep(1.0)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 

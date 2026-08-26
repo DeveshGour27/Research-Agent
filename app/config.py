@@ -93,6 +93,10 @@ class Settings(BaseSettings):
         default=Environment.DEVELOPMENT,
         description="Runtime environment (development | production | testing).",
     )
+    cors_allowed_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:3000", "http://127.0.0.1:3000"],
+        description="List of allowed origins for CORS. Used by the API boundary.",
+    )
     log_level: LogLevel = Field(
         default=LogLevel.INFO,
         description="Minimum log level emitted by the application.",
