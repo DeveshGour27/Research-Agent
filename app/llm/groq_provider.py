@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 from typing import Any
@@ -21,7 +21,11 @@ class GroqProvider(ModelProvider):
             raise ConfigurationError("GROQ_API_KEY must be configured.", details={"provider": "groq"})
         try:
             import groq
-            self._client = groq.Groq(api_key=configuration.groq_api_key, max_retries=0)
+            self._client = groq.Groq(
+                api_key=configuration.groq_api_key, 
+                max_retries=0, 
+                timeout=getattr(configuration, "llm_timeout_seconds", 60.0)
+            )
         except ImportError as e:
             raise ConfigurationError("The 'groq' package is not installed.") from e
 

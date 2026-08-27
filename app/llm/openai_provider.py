@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import json
 from typing import Any
 from app.config import Settings
@@ -19,7 +19,11 @@ class OpenAIProvider(ModelProvider):
             raise ConfigurationError("openai_api_key must be configured.", details={"provider": "openai"})
         try:
             import openai
-            self._client = openai.OpenAI(api_key=configuration.openai_api_key, max_retries=0)
+            self._client = openai.OpenAI(
+                api_key=configuration.openai_api_key, 
+                max_retries=0, 
+                timeout=getattr(configuration, "llm_timeout_seconds", 60.0)
+            )
         except ImportError as e:
             raise ConfigurationError("The 'openai' package is not installed.") from e
 

@@ -194,6 +194,18 @@ class AsyncJobManager:
                             return res
                     jobs = await asyncio.to_thread(_fetch_jobs, recovered_ids)
                     for jid, uid, goal in jobs:
+                        from app.observability.events import RetryAttemptedEvent
+                        try:
+                            RetryAttemptedEvent(
+                                trace_id=None,
+                                run_id=None,
+                                span_id=None,
+                                parent_span_id=None,
+                                error_type="StaleJobRecovery",
+                                attempt_number=1
+                            ).emit()
+                        except Exception as e:
+                            logger.error(f"Failed to emit RetryAttemptedEvent: {e}")
                         self.submit_job(jid, uid, goal)
             except asyncio.CancelledError:
                 break
@@ -207,9 +219,13 @@ class AsyncJobManager:
                 return
 
             def _claim():
-                with self._session_factory() as session:
-                    repo = SQLJobRepository(session)
-                    return repo.claim_job(job_id, self.worker_id)
+                try:
+                    with self._session_factory() as session:
+                        repo = SQLJobRepository(session)
+                        return repo.claim_job(job_id, self.worker_id)
+                except Exception as e:
+                    logger.error(f"Failed to claim job {job_id}: {e}")
+                    return False
             
             claimed = await asyncio.to_thread(_claim)
             if not claimed:
@@ -222,16 +238,19 @@ class AsyncJobManager:
             supervisor = self._supervisor_factory()
 
             def _update_result(status: str, result: str | None = None, error_message: str | None = None):
-                with self._session_factory() as session:
-                    repo = SQLJobRepository(session)
-                    repo.update_job_result(
-                        job_id=job_id,
-                        user_id=user_id,
-                        status=status,
-                        result=result,
-                        error_message=error_message,
-                        worker_id=self.worker_id,
-                    )
+                try:
+                    with self._session_factory() as session:
+                        repo = SQLJobRepository(session)
+                        repo.update_job_result(
+                            job_id=job_id,
+                            user_id=user_id,
+                            status=status,
+                            result=result,
+                            error_message=error_message,
+                            worker_id=self.worker_id,
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to update job {job_id} result to {status}: {e}")
 
             try:
                 result = await asyncio.wait_for(
@@ -247,6 +266,20 @@ class AsyncJobManager:
 
             except asyncio.TimeoutError:
                 context.mark_timed_out()
+                
+                # Emit structured telemetry for timeout
+                from app.observability.events import TimeoutCancellationEvent
+                try:
+                    TimeoutCancellationEvent(
+                        trace_id=getattr(context, "trace_id", None),
+                        run_id=getattr(context, "run_id", None),
+                        span_id=None,
+                        parent_span_id=None,
+                        reason="Job Execution Timeout"
+                    ).emit()
+                except Exception as e:
+                    logger.error(f"Failed to emit TimeoutCancellationEvent: {e}")
+                    
                 await asyncio.to_thread(
                     _update_result,
                     status="FAILED",
@@ -257,12 +290,15 @@ class AsyncJobManager:
             except (AgentExecutionError, AgentCancellationError, AgentTimeoutError) as e:
                 if isinstance(e, AgentCancellationError):
                     def _mark_cancel():
-                        with self._session_factory() as session:
-                            repo = SQLJobRepository(session)
-                            try:
-                                repo.update_job_status(job_id, user_id, status="CANCELLED", worker_id=self.worker_id)
-                            except InvalidStateTransitionError:
-                                pass
+                        try:
+                            with self._session_factory() as session:
+                                repo = SQLJobRepository(session)
+                                try:
+                                    repo.update_job_status(job_id, user_id, status="CANCELLED", worker_id=self.worker_id)
+                                except InvalidStateTransitionError:
+                                    pass
+                        except Exception as e:
+                            logger.error(f"Failed to mark job {job_id} as cancelled: {e}")
                     await asyncio.to_thread(_mark_cancel)
                 else:
                     await asyncio.to_thread(
@@ -272,20 +308,23 @@ class AsyncJobManager:
                     )
             except AgentHITLPauseException as e:
                 def _mark_wait():
-                    with self._session_factory() as session:
-                        repo = SQLJobRepository(session)
-                        try:
-                            # It's waiting for human, worker goes away, worker_id = None
-                            # But we also don't clear worker_id if we want to ensure it isn't picked up?
-                            # Actually, WAITING_FOR_HUMAN shouldn't be picked up anyway.
-                            repo.update_job_status(job_id, user_id, status="WAITING_FOR_HUMAN", worker_id=self.worker_id)
-                            # Remove worker association so it can be picked up by any worker when approved
-                            from sqlalchemy import update
-                            from app.db.models import Job
-                            session.execute(update(Job).where(Job.job_id == job_id).values(worker_id=None, heartbeat_at=None))
-                            session.commit()
-                        except InvalidStateTransitionError:
-                            pass
+                    try:
+                        with self._session_factory() as session:
+                            repo = SQLJobRepository(session)
+                            try:
+                                # It's waiting for human, worker goes away, worker_id = None
+                                # But we also don't clear worker_id if we want to ensure it isn't picked up?
+                                # Actually, WAITING_FOR_HUMAN shouldn't be picked up anyway.
+                                repo.update_job_status(job_id, user_id, status="WAITING_FOR_HUMAN", worker_id=self.worker_id)
+                                # Remove worker association so it can be picked up by any worker when approved
+                                from sqlalchemy import update
+                                from app.db.models import Job
+                                session.execute(update(Job).where(Job.job_id == job_id).values(worker_id=None, heartbeat_at=None))
+                                session.commit()
+                            except InvalidStateTransitionError:
+                                pass
+                    except Exception as e:
+                        logger.error(f"Failed to mark job {job_id} as waiting: {e}")
                 await asyncio.to_thread(_mark_wait)
                 logger.info("job_paused_for_hitl", extra={"job_id": job_id, "request_id": e.request_id})
 

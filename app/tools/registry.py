@@ -107,8 +107,16 @@ class ToolRegistry:
                 hitl_service.evaluate_and_enforce_tool(tool, tool_call.arguments, context)
                 
             import time
+            from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+            
             start_time = time.perf_counter()
-            content = tool.execute(**tool_call.arguments)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(tool.execute, **tool_call.arguments)
+                try:
+                    content = future.result(timeout=60.0)
+                except FuturesTimeoutError:
+                    raise ToolExecutionError("Tool execution timed out after 60 seconds", tool_name=tool_call.name)
+                    
             latency_s = round(time.perf_counter() - start_time, 4)
             logger.debug("Tool succeeded", extra={"tool_name": tool_call.name})
             
