@@ -175,7 +175,13 @@ def run_agent() -> None:
 
             turns += 1
             if state.finished and state.final_answer:
-                print(f"Agent: {state.final_answer}")
+                try:
+                    print(f"Agent: {state.final_answer}")
+                except UnicodeEncodeError:
+                    import sys
+                    encoding = sys.stdout.encoding or 'utf-8'
+                    safe_text = state.final_answer.encode(encoding, 'replace').decode(encoding)
+                    print(f"Agent: {safe_text}")
             else:
                 print("Agent: I could not finish within the iteration limit.")
 

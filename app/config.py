@@ -277,7 +277,7 @@ class Settings(BaseSettings):
         description="Timeout for a single web search API request in seconds.",
     )
     web_search_max_results: int = Field(
-        default=5,
+        default=2,
         gt=0,
         description="Maximum number of search results to return.",
     )

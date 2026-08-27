@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -71,7 +71,7 @@ class ModelProfile:
     capabilities: set[ModelCapability]
     context_limit: int = 8192
     default_temperature: float = 0.7
-    max_output_tokens: int = 2048
+    max_output_tokens: int = 512
     priority: int = 100
     enabled: bool = True
     input_cost_per_m: float = 0.0

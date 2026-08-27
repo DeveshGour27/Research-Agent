@@ -53,7 +53,14 @@ class GroqProvider(ModelProvider):
         try:
             raw_response = self._client.chat.completions.create(**payload)
         except Exception as error:
+            error_msg = str(error)
+            if hasattr(error, 'response'):
+                try:
+                    error_msg += f" | Details: {error.response.text}"
+                except:
+                    pass
             transient = self._is_transient_sdk_error(error)
+            logger.error("Groq request failed", extra={"payload_keys": list(payload.keys()), "error": error_msg})
             raise LLMAPIError(
                 "The Groq request failed.",
                 status_code=getattr(error, "status_code", None),
@@ -62,6 +69,7 @@ class GroqProvider(ModelProvider):
                     "model": model_id,
                     "error_type": type(error).__name__,
                     "transient": transient,
+                    "error_msg": error_msg
                 },
             ) from error
 

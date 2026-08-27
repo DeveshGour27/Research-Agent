@@ -15,7 +15,8 @@ dependencies = [
     "PyMuPDF",
     "python-dotenv",
     "fastapi",
-    "uvicorn"
+    "uvicorn",
+    "mcp"
 ]
 
 [project.optional-dependencies]
