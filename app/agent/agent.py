@@ -287,7 +287,7 @@ class Agent(BaseAgent):
             ),
             {
                 "role": "user",
-                "content": user_input,
+                "content": f"<user_input>\n{user_input}\n</user_input>",
             },
         ]
         
@@ -449,7 +449,7 @@ class Agent(BaseAgent):
             return None
 
         lines = "\n".join(
-            f"- {content}"
+            f"<memory>{content}</memory>"
             for content in deduped_contents
         )
 

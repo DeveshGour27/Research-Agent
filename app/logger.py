@@ -62,6 +62,11 @@ class _JSONFormatter(logging.Formatter):
         }
     )
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        from app.observability.redactor import Redactor
+        self._redactor = Redactor()
+
     def format(self, record: logging.LogRecord) -> str:
         # Ensure record.message is populated
         record.message = record.getMessage()
@@ -88,7 +93,10 @@ class _JSONFormatter(logging.Formatter):
             if key not in self._RESERVED and not key.startswith("_"):
                 payload[key] = value
 
-        return json.dumps(payload, default=str)
+        # Redact any sensitive information
+        redacted_payload = self._redactor.redact(payload)
+
+        return json.dumps(redacted_payload, default=str)
 
 
 # ------------------------------------------------------------------ #

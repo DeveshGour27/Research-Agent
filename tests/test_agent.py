@@ -1,4 +1,4 @@
-﻿"""Unit tests for the Phase 2 tool-using agent engine."""
+"""Unit tests for the Phase 2 tool-using agent engine."""
 
 from __future__ import annotations
 
@@ -201,7 +201,7 @@ def test_first_message_is_stored() -> None:
     state = Agent(provider, _registry_with_calculator()).run("Hello")
 
     assert state.messages[0]["role"] == "system"
-    assert state.messages[1] == {"role": "user", "content": "Hello"}
+    assert state.messages[1] == {"role": "user", "content": "<user_input>\nHello\n</user_input>"}
     assert state.messages[2] == {"role": "assistant", "content": "Hi there."}
 
 
@@ -218,9 +218,9 @@ def test_second_message_can_use_the_first_message() -> None:
     agent.run("What did I ask earlier?")
 
     second_call_messages = provider.call_messages[1]
-    assert {"role": "user", "content": "What is the capital of France?"} in second_call_messages
+    assert {"role": "user", "content": "<user_input>\nWhat is the capital of France?\n</user_input>"} in second_call_messages
     assert {"role": "assistant", "content": "Paris."} in second_call_messages
-    assert {"role": "user", "content": "What did I ask earlier?"} in second_call_messages
+    assert {"role": "user", "content": "<user_input>\nWhat did I ask earlier?\n</user_input>"} in second_call_messages
 
 
 def test_assistant_responses_are_preserved_across_turns() -> None:
@@ -256,9 +256,9 @@ def test_tool_calls_and_results_remain_in_history() -> None:
     first_state = agent.run("Calculate 7 + 8")
     agent.run("Use prior context")
 
-    assert any(message.get("role") == "tool" and message.get("content") == "15" for message in first_state.messages)
+    assert any(message.get("role") == "tool" and message.get("content") == "<tool_output>\n15\n</tool_output>" for message in first_state.messages)
     second_call_messages = provider.call_messages[2]
-    assert any(message.get("role") == "tool" and message.get("content") == "15" for message in second_call_messages)
+    assert any(message.get("role") == "tool" and message.get("content") == "<tool_output>\n15\n</tool_output>" for message in second_call_messages)
     assert any(
         message.get("role") == "assistant" and message.get("tool_calls")
         for message in second_call_messages
@@ -301,7 +301,7 @@ def test_reset_clears_history() -> None:
     second_call_messages = provider.call_messages[1]
     assert second_call_messages == [
         {"role": "system", "content": second_call_messages[0]["content"]},
-        {"role": "user", "content": "Second"},
+        {"role": "user", "content": "<user_input>\nSecond\n</user_input>"},
     ]
     assert {"role": "assistant", "content": "Before reset."} not in state_after_reset.messages
 
