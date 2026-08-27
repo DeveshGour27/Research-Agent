@@ -1,0 +1,13 @@
+.\app\evaluation\benchmark_log_capture.py: # Check event logs for ToolCalledEvent or similar
+.\app\evaluation\benchmark_log_capture.py: return sum(1 for r in self.records if hasattr(r, "event") and r.event.get("event_type") == "ToolCalledEvent")
+.\app\evaluation\benchmark_log_capture.py: return sum(1 for r in self.records if hasattr(r, "event") and r.event.get("event_type") == "MemoryRetrievedEvent")
+.\app\observability\events.py: class ToolCalledEvent(BaseEvent):
+.\app\observability\events.py: class MemoryRetrievedEvent(BaseEvent):
+.\tests\test_phase58_evaluation.py: from app.observability.events import AgentExecutionStartedEvent, ToolCalledEvent, HandoffInitiatedEvent
+.\tests\test_phase58_evaluation.py: ToolCalledEvent(None, None, None, None, tool_name="tool1", arguments={}).emit()
+.\tests\test_phase58_evaluation.py: ToolCalledEvent(None, None, None, None, tool_name="tool2", arguments={}).emit()
+.\tests\test_phase58_observability.py: ToolCalledEvent,
+.\tests\test_phase58_observability.py: MemoryRetrievedEvent,
+.\tests\test_phase58_observability.py: event = ToolCalledEvent(
+.\tests\test_phase58_observability.py: ToolCalledEvent("t", "r", "s", "p", "tool", {}),
+.\tests\test_phase58_observability.py: MemoryRetrievedEvent("t", "r", "s", "p", "query", 5, 2),

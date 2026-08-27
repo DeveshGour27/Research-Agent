@@ -274,6 +274,8 @@ class PlanExecutor:
         try:
             # Phase 5.6: Step execution delegates to CollaborationSession
             # which handles router, retry, and handoffs
+            import time
+            start_time = time.perf_counter()
             session = CollaborationSession(
                 step_id=step.step_id,
                 initial_request=request,
@@ -284,6 +286,20 @@ class PlanExecutor:
             )
             
             agent_result = session.execute()
+            latency_s = round(time.perf_counter() - start_time, 4)
+
+            from app.observability.events import AgentStepEvent
+            _emit_safe(AgentStepEvent(
+                trace_id=getattr(context, "trace_id", None) if context else None,
+                run_id=getattr(context, "run_id", None) if context else None,
+                span_id=getattr(context, "span_id", None) if context else None,
+                parent_span_id=getattr(context, "parent_span_id", None) if context else None,
+                agent_name="executor",
+                step_name=step.step_id,
+                success=agent_result.success,
+                latency_s=latency_s,
+                error_info=None if agent_result.success else "Agent returned unsuccessful result."
+            ))
 
             return StepResult(
                 step_id=step.step_id,
@@ -302,6 +318,18 @@ class PlanExecutor:
                     "error": str(error),
                 },
             )
+            from app.observability.events import AgentStepEvent
+            _emit_safe(AgentStepEvent(
+                trace_id=getattr(context, "trace_id", None) if context else None,
+                run_id=getattr(context, "run_id", None) if context else None,
+                span_id=getattr(context, "span_id", None) if context else None,
+                parent_span_id=getattr(context, "parent_span_id", None) if context else None,
+                agent_name="executor",
+                step_name=step.step_id,
+                success=False,
+                latency_s=None,
+                error_info=str(error)
+            ))
             return StepResult(
                 step_id=step.step_id,
                 success=False,

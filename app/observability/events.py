@@ -193,3 +193,76 @@ class MemoryRetrievedEvent(BaseEvent):
             parent_span_id=parent_span_id,
             event_data={"query": query, "top_k": top_k, "result_count": result_count},
         )
+
+@dataclass
+class LLMCallEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, provider: str, model: str, latency_s: float, input_tokens: int, output_tokens: int, total_tokens: int, task_type: str, success: bool = True, error_info: str | None = None):
+        super().__init__(
+            event_type="LLMCallEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"provider": provider, "model": model, "latency_s": latency_s, "input_tokens": input_tokens, "output_tokens": output_tokens, "total_tokens": total_tokens, "task_type": task_type, "success": success, "error_info": error_info},
+        )
+
+@dataclass
+class ToolCallEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, tool_name: str, arguments: dict[str, Any], success: bool = True, latency_s: float | None = None, error_info: str | None = None):
+        super().__init__(
+            event_type="ToolCallEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"tool_name": tool_name, "arguments": arguments, "success": success, "latency_s": latency_s, "error_info": error_info},
+        )
+
+@dataclass
+class RetrievalEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, query: str, top_k: int, result_count: int, success: bool = True, latency_s: float | None = None, error_info: str | None = None):
+        super().__init__(
+            event_type="RetrievalEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"query": query, "top_k": top_k, "result_count": result_count, "success": success, "latency_s": latency_s, "error_info": error_info},
+        )
+
+@dataclass
+class RerankEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, query: str, input_count: int, output_count: int, success: bool = True, latency_s: float | None = None, error_info: str | None = None):
+        super().__init__(
+            event_type="RerankEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"query": query, "input_count": input_count, "output_count": output_count, "success": success, "latency_s": latency_s, "error_info": error_info},
+        )
+
+@dataclass
+class ReflectionEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, reflection_type: str, success: bool = True, latency_s: float | None = None, error_info: str | None = None):
+        super().__init__(
+            event_type="ReflectionEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"reflection_type": reflection_type, "success": success, "latency_s": latency_s, "error_info": error_info},
+        )
+
+@dataclass
+class AgentStepEvent(BaseEvent):
+    def __init__(self, trace_id: str | None, run_id: str | None, span_id: str | None, parent_span_id: str | None, agent_name: str, step_name: str, success: bool = True, latency_s: float | None = None, error_info: str | None = None):
+        super().__init__(
+            event_type="AgentStepEvent",
+            trace_id=trace_id,
+            run_id=run_id,
+            span_id=span_id,
+            parent_span_id=parent_span_id,
+            event_data={"agent_name": agent_name, "step_name": step_name, "success": success, "latency_s": latency_s, "error_info": error_info},
+        )
+

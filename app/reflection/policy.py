@@ -33,12 +33,15 @@ class EvidenceSufficiencyPolicy:
         # Enforce max attempts
         if current_attempt > settings.max_retrieval_retries:
             logger.warning("Retry budget exhausted. Forcing INSUFFICIENT_EVIDENCE.")
-            return ReflectionResult(
+            res = ReflectionResult(
                 decision=ReflectionDecision.INSUFFICIENT_EVIDENCE,
                 confidence=1.0,
                 reason="Maximum retry budget exhausted.",
                 retry_retrieval=False
             )
+            from app.observability.events import ReflectionEvent
+            ReflectionEvent(None, None, None, None, reflection_type=res.decision.name, success=True).emit()
+            return res
             
         result = self.evaluator.evaluate(query, retrieved_docs)
 
@@ -46,29 +49,40 @@ class EvidenceSufficiencyPolicy:
         if result.decision == ReflectionDecision.ACCEPT:
             if not retrieved_docs:
                 logger.warning("Reflection returned ACCEPT on empty evidence. Overriding to INSUFFICIENT_EVIDENCE.")
-                return ReflectionResult(
+                res = ReflectionResult(
                     decision=ReflectionDecision.INSUFFICIENT_EVIDENCE,
                     confidence=1.0,
                     reason="Policy override: Cannot ACCEPT empty evidence.",
                     retry_retrieval=result.retry_retrieval
                 )
+                from app.observability.events import ReflectionEvent
+                ReflectionEvent(None, None, None, None, reflection_type=res.decision.name, success=True).emit()
+                return res
 
         if result.decision == ReflectionDecision.RETRY_RETRIEVAL or result.retry_retrieval:
             # Check if budget permits retry
             if current_attempt >= settings.max_retrieval_retries:
                 logger.info("Reflection requested retry but budget exhausted. Yielding INSUFFICIENT_EVIDENCE.")
-                return ReflectionResult(
+                res = ReflectionResult(
                     decision=ReflectionDecision.INSUFFICIENT_EVIDENCE,
                     confidence=result.confidence,
                     reason="Budget exhausted for retries.",
                     retry_retrieval=False
                 )
+                from app.observability.events import ReflectionEvent
+                ReflectionEvent(None, None, None, None, reflection_type=res.decision.name, success=True).emit()
+                return res
             # Normal retry allowed
-            return ReflectionResult(
+            res = ReflectionResult(
                 decision=ReflectionDecision.RETRY_RETRIEVAL,
                 confidence=result.confidence,
                 reason=result.reason,
                 retry_retrieval=True
             )
+            from app.observability.events import ReflectionEvent
+            ReflectionEvent(None, None, None, None, reflection_type=res.decision.name, success=True).emit()
+            return res
 
+        from app.observability.events import ReflectionEvent
+        ReflectionEvent(None, None, None, None, reflection_type=result.decision.name, success=True).emit()
         return result

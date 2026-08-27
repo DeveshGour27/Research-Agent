@@ -850,13 +850,22 @@ class Retriever:
             rerank_items,
         )
 
+        from app.observability.events import RerankEvent
         if not reranked:
             logger.warning(
                 "Reranker returned no results; "
                 "preserving original retrieval results."
             )
-
+            RerankEvent(
+                trace_id=None, run_id=None, span_id=None, parent_span_id=None,
+                query=query, input_count=len(rerank_items), output_count=0, success=False
+            ).emit()
             return results
+            
+        RerankEvent(
+            trace_id=None, run_id=None, span_id=None, parent_span_id=None,
+            query=query, input_count=len(rerank_items), output_count=len(reranked), success=True
+        ).emit()
 
         # =====================================================
         # PRESERVE ORIGINAL RETRIEVAL SCORES
@@ -1069,5 +1078,17 @@ class Retriever:
                 )
 
                 break
+                
+        from app.observability.events import RetrievalEvent
+        RetrievalEvent(
+            trace_id=None,
+            run_id=None,
+            span_id=None,
+            parent_span_id=None,
+            query=query,
+            top_k=settings.top_k_retrieval,
+            result_count=len(seen_chunk_ids),
+            success=True
+        ).emit()
 
         return results

@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import dataclasses
 from typing import Any
@@ -81,6 +81,22 @@ class ModelGateway:
                     response = provider.generate(req, profile.model_id)
                     latency = time.perf_counter() - start_time
                     
+                    from app.observability.events import LLMCallEvent
+                    LLMCallEvent(
+                        trace_id=getattr(request, "trace_id", None),
+                        run_id=getattr(request, "run_id", None),
+                        span_id=None,
+                        parent_span_id=None,
+                        provider=response.provider,
+                        model=response.model,
+                        latency_s=round(latency, 2),
+                        input_tokens=response.input_tokens,
+                        output_tokens=response.output_tokens,
+                        total_tokens=response.total_tokens,
+                        task_type=request.task_type.name,
+                        success=True
+                    ).emit()
+
                     logger.info("Model request completed", extra={
                         "provider": response.provider,
                         "model": response.model,
@@ -96,6 +112,24 @@ class ModelGateway:
                     last_error = e
                     transient = e.details.get("transient", False)
                     logger.warning("Model request failed", extra={"provider": profile.provider, "model": profile.model_id, "transient": transient, "error": str(e)})
+                    
+                    from app.observability.events import LLMCallEvent
+                    LLMCallEvent(
+                        trace_id=getattr(request, "trace_id", None),
+                        run_id=getattr(request, "run_id", None),
+                        span_id=None,
+                        parent_span_id=None,
+                        provider=profile.provider,
+                        model=profile.model_id,
+                        latency_s=0.0,
+                        input_tokens=0,
+                        output_tokens=0,
+                        total_tokens=0,
+                        task_type=request.task_type.name,
+                        success=False,
+                        error_info=str(e)
+                    ).emit()
+
                     if not transient:
                         if getattr(e, "status_code", None) in (401, 402, 403):
                             failed_providers.add(profile.provider)

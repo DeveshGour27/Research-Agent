@@ -106,8 +106,24 @@ class ToolRegistry:
             if hitl_service is not None:
                 hitl_service.evaluate_and_enforce_tool(tool, tool_call.arguments, context)
                 
+            import time
+            start_time = time.perf_counter()
             content = tool.execute(**tool_call.arguments)
+            latency_s = round(time.perf_counter() - start_time, 4)
             logger.debug("Tool succeeded", extra={"tool_name": tool_call.name})
+            
+            from app.observability.events import ToolCallEvent
+            ToolCallEvent(
+                trace_id=getattr(context, "trace_id", None) if context else None,
+                run_id=getattr(context, "run_id", None) if context else None,
+                span_id=None,
+                parent_span_id=None,
+                tool_name=tool_call.name,
+                arguments=tool_call.arguments,
+                success=True,
+                latency_s=latency_s
+            ).emit()
+            
             return ToolResult(tool_call_id=tool_call.id, content=content, is_error=False)
 
         except ToolExecutionError as error:
@@ -115,6 +131,17 @@ class ToolRegistry:
                 "Tool execution error",
                 extra={"tool_name": tool_call.name, "error": error.message},
             )
+            from app.observability.events import ToolCallEvent
+            ToolCallEvent(
+                trace_id=getattr(context, "trace_id", None) if context else None,
+                run_id=getattr(context, "run_id", None) if context else None,
+                span_id=None,
+                parent_span_id=None,
+                tool_name=tool_call.name,
+                arguments=tool_call.arguments,
+                success=False,
+                error_info=error.message
+            ).emit()
             return ToolResult(
                 tool_call_id=tool_call.id,
                 content=f"Error: {error.message}",
@@ -125,6 +152,17 @@ class ToolRegistry:
                 "Unexpected tool error",
                 extra={"tool_name": tool_call.name, "error_type": type(error).__name__},
             )
+            from app.observability.events import ToolCallEvent
+            ToolCallEvent(
+                trace_id=getattr(context, "trace_id", None) if context else None,
+                run_id=getattr(context, "run_id", None) if context else None,
+                span_id=None,
+                parent_span_id=None,
+                tool_name=tool_call.name,
+                arguments=tool_call.arguments,
+                success=False,
+                error_info=str(error)
+            ).emit()
             return ToolResult(
                 tool_call_id=tool_call.id,
                 content=f"Error: unexpected failure in '{tool_call.name}': {error}",

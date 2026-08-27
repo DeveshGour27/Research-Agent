@@ -33,10 +33,18 @@ class Redactor:
         if isinstance(obj, str):
             return self._redact_string(obj)
         elif isinstance(obj, dict):
-            return {
-                self._redact_string(str(k)): self._redact_recursive(v, depth + 1)
-                for k, v in obj.items()
-            }
+            result = {}
+            for k, v in obj.items():
+                k_str = str(k)
+                redacted_key = self._redact_string(k_str)
+                
+                # If the key itself indicates a secret, redact the value entirely
+                k_lower = k_str.lower()
+                if any(secret_term in k_lower for secret_term in ["api_key", "apikey", "password", "secret", "token"]):
+                    result[redacted_key] = self._replacement
+                else:
+                    result[redacted_key] = self._redact_recursive(v, depth + 1)
+            return result
         elif isinstance(obj, list):
             return [self._redact_recursive(v, depth + 1) for v in obj]
         elif isinstance(obj, tuple):
