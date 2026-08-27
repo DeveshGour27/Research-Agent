@@ -26,7 +26,7 @@ Key variables include:
 - `ENVIRONMENT=production`
 - `DATABASE_URL`: Your PostgreSQL connection string.
 - `GROQ_API_KEY`: Required in production for the LLM pipeline.
-- `WEB_SEARCH_API_KEY`: Required for the search tool.
+- `SEARXNG_BASE_URL`: Base URL for the local SearXNG instance (defaults to http://localhost:8080).
 
 > [!WARNING]
 > Never commit your `.env` file to version control. Production secrets must be provided securely to the container runtime.

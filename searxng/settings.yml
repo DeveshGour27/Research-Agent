@@ -1,0 +1,7 @@
+use_default_settings: true
+server:
+  secret_key: "local-dev-secret-key-do-not-use-in-prod"
+search:
+  formats:
+    - html
+    - json

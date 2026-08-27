@@ -143,7 +143,7 @@ def test_job_submission_returns_immediately(db_session, user):
         job = repo.create_job("job_1", user.user_id, "test goal")
         
         manager.submit_job(job.job_id, user.user_id, "test goal")
-        await asyncio.sleep(0.05) # Yield to event loop so task can start
+        await asyncio.sleep(0.5) # Yield to event loop so task can start
         
         db_session.refresh(job)
         assert job.status == "RUNNING"

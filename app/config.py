@@ -1,4 +1,4 @@
-﻿"""
+"""
 Configuration module for the Production AI Research Agent.
 
 Responsibilities:
@@ -264,12 +264,12 @@ class Settings(BaseSettings):
         description="JSON string representing a dictionary of MCP server configurations.",
     )
     web_search_provider: str = Field(
-        default="tavily",
-        description="Provider used for the WebSearchTool (e.g., tavily).",
+        default="searxng",
+        description="Provider used for the WebSearchTool (e.g., searxng).",
     )
-    web_search_api_key: str = Field(
-        default="",
-        description="API key for the web search provider. Must not be logged.",
+    searxng_base_url: str = Field(
+        default="http://localhost:8080",
+        description="Base URL for the local SearXNG instance.",
     )
     web_search_timeout_seconds: float = Field(
         default=10.0,

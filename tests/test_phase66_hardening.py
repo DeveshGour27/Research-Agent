@@ -69,8 +69,8 @@ def test_planner_enforces_max_steps():
 @patch("urllib.request.urlopen")
 def test_web_search_timeout(mock_urlopen, mock_settings):
     """Verify WebSearchTool safely handles timeouts."""
-    mock_settings.web_search_provider = "tavily"
-    mock_settings.web_search_api_key = "secret_key"
+    mock_settings.web_search_provider = "searxng"
+    mock_settings.searxng_base_url = "http://localhost:8080"
     mock_settings.web_search_max_results = 5
     mock_settings.web_search_timeout_seconds = 10
     mock_urlopen.side_effect = TimeoutError("Connection timed out")
@@ -79,12 +79,6 @@ def test_web_search_timeout(mock_urlopen, mock_settings):
     
     with pytest.raises(ToolExecutionError, match="Web search request timed out."):
         tool.execute(query="test query")
-        
-    # Also verify it doesn't leak secrets in exceptions
-    try:
-        tool.execute(query="test query")
-    except ToolExecutionError as e:
-        assert "secret_key" not in str(e)
 
 
 def test_agent_isolation():

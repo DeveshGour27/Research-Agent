@@ -1,4 +1,4 @@
-"""Web search tool using Tavily API."""
+"""Web search tool using SearXNG HTTP API."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from app.tools.base import BaseTool
 
 
 class WebSearchTool(BaseTool):
-    """Perform a web search using the configured provider (e.g., Tavily)."""
+    """Perform a web search using the configured provider (e.g., SearXNG)."""
 
     name = "web_search"
     description = (
@@ -40,38 +40,27 @@ class WebSearchTool(BaseTool):
             )
 
         provider = settings.web_search_provider.lower()
-        if provider != "tavily":
+        if provider != "searxng":
             raise ToolExecutionError(
                 f"Unsupported web search provider: {provider}",
                 tool_name=self.name,
             )
 
-        api_key = settings.web_search_api_key
-        if not api_key:
-            raise ToolExecutionError(
-                "Web search API key is not configured.",
-                tool_name=self.name,
-            )
-
         max_results = settings.web_search_max_results
         timeout = settings.web_search_timeout_seconds
+        base_url = settings.searxng_base_url.rstrip("/")
 
-        url = "https://api.tavily.com/search"
-        payload = {
-            "api_key": api_key,
-            "query": query,
-            "search_depth": "basic",
-            "include_answer": False,
-            "include_images": False,
-            "include_raw_content": False,
-            "max_results": max_results,
-        }
-        data = json.dumps(payload).encode("utf-8")
+        import urllib.parse
+        params = urllib.parse.urlencode({
+            "q": query,
+            "format": "json"
+        })
+        url = f"{base_url}/search?{params}"
+        
         req = urllib.request.Request(
             url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
+            headers={"User-Agent": "ResearchAgent/1.0"},
+            method="GET",
         )
 
         try:
@@ -79,7 +68,6 @@ class WebSearchTool(BaseTool):
                 response_body = response.read().decode("utf-8")
                 result_data = json.loads(response_body)
         except urllib.error.HTTPError as error:
-            # Handle HTTP errors safely (masking secrets)
             raise ToolExecutionError(
                 f"Web search provider returned HTTP {error.code}: {error.reason}",
                 tool_name=self.name,
@@ -114,13 +102,13 @@ class WebSearchTool(BaseTool):
             )
 
         normalized_results = []
-        for item in results[:max_results]:  # Enforce limit just in case
+        for item in results[:max_results]:
             if not isinstance(item, dict):
                 continue
             normalized_results.append({
                 "title": item.get("title", ""),
                 "url": item.get("url", ""),
-                "snippet": item.get("content", ""),  # Tavily uses 'content' for snippet
+                "snippet": item.get("content", ""),
             })
 
         if not normalized_results:

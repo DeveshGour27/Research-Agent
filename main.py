@@ -5,16 +5,19 @@ in-memory conversation state. Provider-specific API calls live in ``app.llm``.
 """
 
 from __future__ import annotations
+import uuid
 
 from app.agent import Agent
 from app.config import settings
 from app.constants import CLI_EXIT_COMMANDS
-from app.exceptions import AgentError, ConfigurationError, InputValidationError
-from app.llm import ChatMessage, ChatService, create_chat_provider
+from app.exceptions import AgentError, ConfigurationError, InputValidationError, AgentHITLPauseException
+from app.llm import create_model_gateway
+from app.llm.service import ChatService
 from app.logger import get_logger
 from app.memory import JsonFileMemoryStore
 from app.tools import ToolRegistry
 from app.tools.calculator import CalculatorTool
+from app.tools.web_search import WebSearchTool
 from app.agent.registry import AgentRegistry
 from app.agent.routing import CapabilityRouter
 from app.agent.communicator import InProcessCommunicator
@@ -25,6 +28,9 @@ from app.agent.specialized.rag_agent import RAGAgent
 from app.agent.supervisor import Supervisor
 from app.agent.contracts import AgentRequest
 from app.agent.execution_context import AgentExecutionContext
+from app.hitl.service import HITLService
+from app.hitl.policy import HITLPolicy
+from app.db.database import Base, engine, SessionLocal
 
 
 logger = get_logger(__name__)
@@ -32,9 +38,9 @@ logger = get_logger(__name__)
 
 def run_chat() -> None:
     """Run the interactive chat loop until the user exits or input closes."""
-    provider = create_chat_provider(settings)
+    provider = create_model_gateway(settings)
     chat_service = ChatService(provider)
-    history: list[ChatMessage] = []
+    history: list[dict] = []
 
     logger.info(
         "CLI started",
@@ -67,8 +73,8 @@ def run_chat() -> None:
 
             history.extend(
                 (
-                    ChatMessage(role="user", content=user_input),
-                    ChatMessage(role="assistant", content=response.content),
+                    {"role": "user", "content": user_input},
+                    {"role": "assistant", "content": response.content},
                 )
             )
             print(f"Agent: {response.content}")
@@ -78,9 +84,14 @@ def run_chat() -> None:
 
 def run_agent() -> None:
     """Run the interactive tool-using agent loop until the user exits."""
-    provider = create_chat_provider(settings)
+    provider = create_model_gateway(settings)
     registry = ToolRegistry()
     registry.register(CalculatorTool())
+    registry.register(WebSearchTool())
+    
+    hitl_policy = HITLPolicy()
+    hitl_service = HITLService(session_factory=SessionLocal, policy=hitl_policy)
+    
     memory_store = JsonFileMemoryStore()
     boundary_email = input("User email (optional, for persistent identity): ").strip()
     if boundary_email:
@@ -94,6 +105,7 @@ def run_agent() -> None:
         user_id=user.user_id,
         chat_id=chat_id,
         memory_store=memory_store,
+        hitl_service=hitl_service,
     )
 
     logger.info(
@@ -145,8 +157,14 @@ def run_agent() -> None:
                     print(f"{index}. {memory.content}")
                 continue
 
+            context = AgentExecutionContext(task=user_input, user_id=user.user_id, chat_id=chat_id)
+            context.set_metadata("job_id", str(uuid.uuid4()))
+
             try:
-                state = agent.run(user_input)
+                state = agent.run(user_input, context=context)
+            except AgentHITLPauseException as e:
+                print(f"Agent paused for human approval: {str(e)}")
+                continue
             except AgentError as error:
                 logger.exception(
                     "Agent request failed",
@@ -170,8 +188,18 @@ def run_agent() -> None:
 
 def run_supervisor() -> None:
     """Run the interactive Supervisor loop with Phase 6 planning architecture."""
-    provider = create_chat_provider(settings)
+    provider = create_model_gateway(settings)
+    
+    hitl_policy = HITLPolicy()
+    hitl_service = HITLService(session_factory=SessionLocal, policy=hitl_policy)
+
+    tool_registry = ToolRegistry()
+    tool_registry.register(CalculatorTool())
+    tool_registry.register(WebSearchTool())
+    general_agent = Agent(provider=provider, registry=tool_registry, hitl_service=hitl_service)
+    
     registry = AgentRegistry()
+    registry.register(general_agent)
     registry.register(WebResearchAgent())
     registry.register(RAGAgent())
 
@@ -187,6 +215,7 @@ def run_supervisor() -> None:
         registry=registry,
         planner=planner,
         plan_executor=plan_executor,
+        hitl_service=hitl_service,
     )
 
     logger.info(
@@ -210,10 +239,14 @@ def run_supervisor() -> None:
                 break
 
             context = AgentExecutionContext(task=user_input)
+            context.set_metadata("job_id", str(uuid.uuid4()))
             request = AgentRequest(input_text=user_input, context=context)
 
             try:
                 result = supervisor.execute(request)
+            except AgentHITLPauseException as e:
+                print(f"Agent paused for human approval: {str(e)}")
+                continue
             except AgentError as error:
                 logger.exception(
                     "Supervisor request failed",
@@ -242,6 +275,7 @@ def run_api() -> None:
 
 def main() -> int:
     """Start the CLI and return a process exit code."""
+    Base.metadata.create_all(bind=engine)
     try:
         mode = input("Mode [agent/chat/supervisor/api] (default: agent): ").strip().casefold()
         if mode in {"", "agent", "a"}:

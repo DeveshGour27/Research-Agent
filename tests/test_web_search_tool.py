@@ -15,8 +15,8 @@ from app.tools.web_search import WebSearchTool
 @pytest.fixture
 def mock_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure settings are predictably configured for testing."""
-    monkeypatch.setattr(settings, "web_search_provider", "tavily")
-    monkeypatch.setattr(settings, "web_search_api_key", "test-secret-key")
+    monkeypatch.setattr(settings, "web_search_provider", "searxng")
+    monkeypatch.setattr(settings, "searxng_base_url", "http://localhost:8080")
     monkeypatch.setattr(settings, "web_search_max_results", 2)
     monkeypatch.setattr(settings, "web_search_timeout_seconds", 5.0)
 
@@ -43,10 +43,12 @@ def test_web_search_success(tool: WebSearchTool, mock_settings: None) -> None:
 
     # Assert urlopen called with correct parameters
     request_obj = mock_urlopen.call_args[0][0]
-    assert request_obj.full_url == "https://api.tavily.com/search"
-    payload = json.loads(request_obj.data.decode("utf-8"))
-    assert payload["api_key"] == "test-secret-key"
-    assert payload["query"] == "test query"
+    
+    import urllib.parse
+    params = urllib.parse.urlencode({"q": "test query", "format": "json"})
+    assert request_obj.full_url == f"http://localhost:8080/search?{params}"
+    assert request_obj.method == "GET"
+    assert request_obj.headers.get("User-agent") == "ResearchAgent/1.0"
 
     # Assert normalized result
     results = json.loads(result_str)
@@ -67,37 +69,40 @@ def test_web_search_whitespace_query(tool: WebSearchTool, mock_settings: None) -
         tool.execute(query="   \n \t  ")
 
 
-def test_web_search_missing_api_key(tool: WebSearchTool, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Test error when API key is not configured."""
-    monkeypatch.setattr(settings, "web_search_api_key", "")
-    with pytest.raises(ToolExecutionError, match="API key is not configured"):
-        tool.execute(query="test")
-
-
 def test_web_search_unsupported_provider(tool: WebSearchTool, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test error on unsupported provider."""
     monkeypatch.setattr(settings, "web_search_provider", "unsupported")
-    monkeypatch.setattr(settings, "web_search_api_key", "key")
     with pytest.raises(ToolExecutionError, match="Unsupported web search provider"):
         tool.execute(query="test")
 
+def test_web_search_provider_resolution() -> None:
+    """Test that WebSearchTool resolves to searxng without falling back to Tavily."""
+    tool = WebSearchTool()
+    
+    mock_response = MagicMock()
+    mock_response.read.return_value = json.dumps({"results": []}).encode("utf-8")
+
+    with patch("urllib.request.urlopen") as mock_urlopen:
+        mock_urlopen.return_value.__enter__.return_value = mock_response
+        tool.execute(query="test query")
+        
+    request_obj = mock_urlopen.call_args[0][0]
+    assert "localhost" in request_obj.full_url
+    assert "searxng" not in getattr(request_obj, "full_url", "")
+    assert "tavily" not in request_obj.full_url
 
 def test_web_search_http_error(tool: WebSearchTool, mock_settings: None) -> None:
-    """Test handling of HTTP error from the provider without leaking secrets."""
+    """Test handling of HTTP error from the provider."""
     with patch("urllib.request.urlopen") as mock_urlopen:
         mock_urlopen.side_effect = urllib.error.HTTPError(
-            url="https://api.tavily.com/search",
+            url="http://localhost:8080/search",
             code=403,
             msg="Forbidden",
             hdrs=None, # type: ignore
             fp=None,
         )
-        with pytest.raises(ToolExecutionError, match="HTTP 403: Forbidden") as exc_info:
+        with pytest.raises(ToolExecutionError, match="HTTP 403: Forbidden"):
             tool.execute(query="test")
-        
-        # Ensure the secret key doesn't leak into the exception
-        assert "test-secret-key" not in str(exc_info.value)
-        assert "test-secret-key" not in str(exc_info.value.details)
 
 
 def test_web_search_url_error(tool: WebSearchTool, mock_settings: None) -> None:
