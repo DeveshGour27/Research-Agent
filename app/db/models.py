@@ -25,10 +25,15 @@ class User(Base):
 
     user_id = Column(String, primary_key=True, default=_uuid_str)
     email = Column(String, unique=True, index=True, nullable=True)
+    password_hash = Column(String, nullable=True)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    verification_token_hash = Column(String, nullable=True, index=True)
+    verification_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
 
     api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
     jobs = relationship("Job", back_populates="user", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
 
 
 class ApiKey(Base):
@@ -100,3 +105,44 @@ class HITLRequest(Base):
     decision_reason = Column(Text, nullable=True)
 
     job = relationship("Job")
+
+
+class Conversation(Base):
+    __tablename__ = 'conversations'
+
+    chat_id = Column(String, primary_key=True, default=_uuid_str)
+    user_id = Column(String, ForeignKey('users.user_id'), nullable=False, index=True)
+    title = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=_utc_now, onupdate=_utc_now, nullable=False)
+
+    user = relationship('User', back_populates='conversations')
+    messages = relationship('Message', back_populates='conversation', cascade='all, delete-orphan', order_by='Message.created_at')
+
+
+class Message(Base):
+    __tablename__ = 'messages'
+
+    message_id = Column(String, primary_key=True, default=_uuid_str)
+    chat_id = Column(String, ForeignKey('conversations.chat_id'), nullable=False, index=True)
+    role = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
+    job_id = Column(String, ForeignKey('jobs.job_id'), nullable=True, index=True)
+
+    conversation = relationship('Conversation', back_populates='messages')
+    job = relationship('Job')
+
+
+
+class UserSession(Base):
+    __tablename__ = 'user_sessions'
+
+    session_id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey('users.user_id'), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
+    user = relationship('User')
+

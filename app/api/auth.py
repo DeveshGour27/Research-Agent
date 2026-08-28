@@ -68,3 +68,50 @@ def get_current_user(
         )
 
     return user
+
+from fastapi import Cookie, Request
+
+def get_current_web_user(
+    request: Request,
+    session_id: str | None = Cookie(None),
+    db: Session = Depends(get_db),
+) -> User:
+    if not session_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    
+    from app.db.models import UserSession, _utc_now
+
+    # We assume repo or db query directly
+    # To keep it simple, use db directly
+    user_session = db.query(UserSession).filter(UserSession.session_id == session_id).first()
+    
+    if not user_session:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid session",
+        )
+        
+    import datetime
+    
+    exp = user_session.expires_at
+    if exp.tzinfo is None:
+        exp = exp.replace(tzinfo=datetime.timezone.utc)
+        
+    if user_session.revoked_at is not None or exp < _utc_now():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or revoked",
+        )
+        
+    user = user_session.user
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+        
+    return user
+

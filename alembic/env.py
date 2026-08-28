@@ -17,6 +17,7 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 from app.db.database import Base
+from app.db.models import User, ApiKey, Job, JobStep, HITLRequest, Conversation, Message, UserSession
 from app.config import settings
 
 target_metadata = Base.metadata

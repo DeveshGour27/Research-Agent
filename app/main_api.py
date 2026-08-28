@@ -74,8 +74,10 @@ app = FastAPI(
 )
 
 # Include routers — health_router is public, api_router contains protected routes
+from app.api.auth_routes import router as auth_router
 app.include_router(health_router)
 app.include_router(api_router)
+app.include_router(auth_router)
 
 # Add request-ID propagation middleware
 app.add_middleware(RequestIDMiddleware)
