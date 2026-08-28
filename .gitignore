@@ -9,6 +9,7 @@ memory/preferences/*
 !memory/preferences/.gitkeep
 memory/tasks/*
 !memory/tasks/.gitkeep
+memory/memory_store.json
 reports/*
 !reports/.gitkeep
 .pytest_cache/
