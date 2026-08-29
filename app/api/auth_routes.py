@@ -136,3 +136,7 @@ def logout(
     response.delete_cookie("session_id")
     return {"message": "Logged out successfully"}
 
+@router.get("/me")
+def get_me(user: User = Depends(get_current_web_user)):
+    return {"email": user.email, "user_id": user.user_id}
+

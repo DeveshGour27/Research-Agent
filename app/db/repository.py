@@ -338,6 +338,22 @@ class SQLJobRepository:
             .values(**values)
         )
         res = self.db.execute(stmt)
+        
+        # --- PHASE 6 ASSISTANT MESSAGE CREATION ---
+        if res.rowcount > 0 and status == "COMPLETED" and result is not None:
+            from app.db.models import Message
+            user_msg = self.db.execute(
+                select(Message).where(Message.job_id == job_id, Message.role == "user")
+            ).scalar_one_or_none()
+            if user_msg:
+                assistant_msg = Message(
+                    chat_id=user_msg.chat_id,
+                    role="assistant",
+                    content=result,
+                    job_id=job_id,
+                )
+                self.db.add(assistant_msg)
+
         self.db.commit()
 
         if res.rowcount == 0:
@@ -481,6 +497,27 @@ class SQLJobRepository:
         # Flush, but let caller commit if needed
         self.db.flush()
         return res.rowcount > 0
+    def list_conversations(self, user_id: str):
+        from app.db.models import Conversation
+        from sqlalchemy import select
+        stmt = select(Conversation).where(Conversation.user_id == user_id).order_by(Conversation.updated_at.desc())
+        return list(self.db.execute(stmt).scalars().all())
+
+    def create_conversation(self, user_id: str, title: str | None = None):
+        from app.db.models import Conversation
+        chat = Conversation(user_id=user_id, title=title)
+        self.db.add(chat)
+        self.db.commit()
+        return chat
+
+    def delete_conversation(self, chat_id: str, user_id: str) -> bool:
+        from app.db.models import Conversation
+        from sqlalchemy import delete
+        stmt = delete(Conversation).where(Conversation.chat_id == chat_id, Conversation.user_id == user_id)
+        res = self.db.execute(stmt)
+        self.db.commit()
+        return res.rowcount > 0
+
     def get_conversation(self, chat_id: str, user_id: str) -> "Conversation | None":
         from app.db.models import Conversation
         stmt = select(Conversation).where(
