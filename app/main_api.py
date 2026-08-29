@@ -1,4 +1,4 @@
-"""FastAPI application entrypoint for Phase 7.1 service boundary."""
+﻿"""FastAPI application entrypoint for Phase 7.1 service boundary."""
 
 from __future__ import annotations
 
@@ -73,11 +73,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Include routers — health_router is public, api_router contains protected routes
+# Include routers â€” health_router is public, api_router contains protected routes
 from app.api.auth_routes import router as auth_router
+from app.api.chat_routes import router as chat_router
 app.include_router(health_router)
 app.include_router(api_router)
 app.include_router(auth_router)
+app.include_router(chat_router)
 
 # Add request-ID propagation middleware
 app.add_middleware(RequestIDMiddleware)
@@ -95,4 +97,5 @@ app.add_middleware(
 def create_app() -> FastAPI:
     """Factory function for creating the FastAPI application instance."""
     return app
+
 

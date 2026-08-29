@@ -1,4 +1,4 @@
-"""Repository layer for interacting with the SQL persistence store."""
+﻿"""Repository layer for interacting with the SQL persistence store."""
 
 from __future__ import annotations
 
@@ -481,3 +481,22 @@ class SQLJobRepository:
         # Flush, but let caller commit if needed
         self.db.flush()
         return res.rowcount > 0
+    def get_conversation(self, chat_id: str, user_id: str) -> "Conversation | None":
+        from app.db.models import Conversation
+        stmt = select(Conversation).where(
+            Conversation.chat_id == chat_id,
+            Conversation.user_id == user_id
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
+
+    def get_message(self, message_id: str, user_id: str) -> "Message | None":
+        from app.db.models import Message, Conversation
+        stmt = (
+            select(Message)
+            .join(Conversation)
+            .where(
+                Message.message_id == message_id,
+                Conversation.user_id == user_id
+            )
+        )
+        return self.db.execute(stmt).scalar_one_or_none()
