@@ -1,5 +1,4 @@
-
-import { Plus } from "lucide-react";
+import { Search } from "lucide-react";
 
 export default function DashboardHome() {
   return (

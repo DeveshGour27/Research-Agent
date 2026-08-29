@@ -13,6 +13,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const isSendingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -23,7 +24,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         setChat(data);
         setMessages(data.messages || []);
       } catch (e: unknown) {
-        if (e instanceof Error && 'status' in e && e.status === 404) router.push("/");
+        if (e instanceof Error && 'status' in e && (e as any).status === 404) router.push("/");
       } finally {
         setLoading(false);
       }
@@ -46,10 +47,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim() || sending) return;
+    if (!input.trim() || isSendingRef.current) return;
     const content = input.trim();
     setInput("");
     setSending(true);
+    isSendingRef.current = true;
     
     try {
       await api.sendMessage(chatId, content);
@@ -58,6 +60,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       alert("Failed to send message");
     } finally {
       setSending(false);
+      isSendingRef.current = false;
     }
   };
 

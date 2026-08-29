@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.db.database import Base, engine, get_db, SessionLocal
-from app.db.models import ApiKey, Job, JobStep, User
+from app.db.models import ApiKey, Job, JobStep, User, OAuthIdentity, UserSession, Conversation, Message, HITLRequest
 
 __all__ = [
     "Base",
@@ -14,4 +14,9 @@ __all__ = [
     "Job",
     "JobStep",
     "User",
+    "OAuthIdentity",
+    "UserSession",
+    "Conversation",
+    "Message",
+    "HITLRequest",
 ]

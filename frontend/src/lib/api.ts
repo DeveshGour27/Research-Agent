@@ -47,6 +47,9 @@ export const api = {
   verify: (data: Record<string, unknown>) => fetchAPI("/api/v1/auth/verify", { method: "POST", body: JSON.stringify(data) }),
   logout: () => fetchAPI("/api/v1/auth/logout", { method: "POST" }),
   getMe: () => fetchAPI("/api/v1/auth/me"),
+  getGoogleAuthUrl: () => fetchAPI("/api/v1/auth/google/login"),
+  changePassword: (data: Record<string, unknown>) => fetchAPI("/api/v1/auth/change-password", { method: "POST", body: JSON.stringify(data) }),
+  deleteAccount: () => fetchAPI("/api/v1/auth/delete-account", { method: "POST" }),
   
   getChats: () => fetchAPI("/api/v1/chats"),
   createChat: () => fetchAPI("/api/v1/chats", { method: "POST" }),

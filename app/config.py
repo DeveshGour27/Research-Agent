@@ -48,6 +48,24 @@ class Settings(BaseSettings):
     """
 
     # ------------------------------------------------------------------ #
+    # Authentication & Email
+    # ------------------------------------------------------------------ #
+    session_secret: str = Field(default="super-secret-default-key", description="Secret key for signing sessions")
+    smtp_host: str = Field(default="localhost", description="SMTP server host")
+    smtp_port: int = Field(default=1025, description="SMTP server port")
+    smtp_username: str = Field(default="", description="SMTP username")
+    smtp_password: str = Field(default="", description="SMTP password")
+    email_from: str = Field(default="noreply@researchagent.local", description="Sender email address")
+    app_base_url: str = Field(default="http://localhost:3000", description="Frontend base URL for links")
+    
+    # ------------------------------------------------------------------ #
+    # Google OAuth
+    # ------------------------------------------------------------------ #
+    google_client_id: str = Field(default="", description="Google OAuth Client ID")
+    google_client_secret: str = Field(default="", description="Google OAuth Client Secret")
+    google_redirect_uri: str = Field(default="http://localhost:8000/api/v1/auth/google/callback", description="Google OAuth callback URI")
+
+    # ------------------------------------------------------------------ #
     # LLM / API
     # ------------------------------------------------------------------ #
     groq_api_key: str = Field(

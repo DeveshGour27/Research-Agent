@@ -24,16 +24,35 @@ class User(Base):
     __tablename__ = "users"
 
     user_id = Column(String, primary_key=True, default=_uuid_str)
+    username = Column(String, unique=True, index=True, nullable=True)
     email = Column(String, unique=True, index=True, nullable=True)
     password_hash = Column(String, nullable=True)
     email_verified = Column(Boolean, default=False, nullable=False)
     verification_token_hash = Column(String, nullable=True, index=True)
     verification_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    reset_token_hash = Column(String, nullable=True, index=True)
+    reset_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
 
     api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
     jobs = relationship("Job", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    oauth_identities = relationship("OAuthIdentity", back_populates="user", cascade="all, delete-orphan")
+
+
+class OAuthIdentity(Base):
+    __tablename__ = 'oauth_identities'
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_subject", name="uq_oauth_provider_subject"),
+    )
+    
+    id = Column(String, primary_key=True, default=_uuid_str)
+    user_id = Column(String, ForeignKey('users.user_id'), nullable=False, index=True)
+    provider = Column(String, nullable=False, index=True)
+    provider_subject = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=_utc_now, nullable=False)
+    
+    user = relationship('User', back_populates="oauth_identities")
 
 
 class ApiKey(Base):

@@ -51,4 +51,4 @@ from app.db.models import User, ApiKey, Job, JobStep
 from app.config import Environment
 
 if settings.environment != Environment.PRODUCTION:
-    Base.metadata.create_all(bind=engine)
+    pass # Base.metadata.create_all(bind=engine)

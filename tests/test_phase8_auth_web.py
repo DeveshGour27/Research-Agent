@@ -47,7 +47,7 @@ def client(override_get_db):
     app.dependency_overrides.clear()
 
 def test_signup_successful(client, override_get_db):
-    res = client.post("/api/v1/auth/signup", json={"email": "test@example.com", "password": "password123"})
+    res = client.post("/api/v1/auth/signup", json={"username": "testuser", "email": "test@example.com", "password": "password123", "confirm_password": "password123"})
     assert res.status_code == 201
     
     # Verify DB state
@@ -59,18 +59,22 @@ def test_signup_successful(client, override_get_db):
     assert user.verification_token_hash is not None
 
 def test_signup_duplicate_email(client):
-    client.post("/api/v1/auth/signup", json={"email": "test2@example.com", "password": "password123"})
-    res = client.post("/api/v1/auth/signup", json={"email": "test2@example.com", "password": "password123"})
+    client.post("/api/v1/auth/signup", json={"username": "test2", "email": "test2@example.com", "password": "password123", "confirm_password": "password123"})
+    res = client.post("/api/v1/auth/signup", json={"username": "test3", "email": "test2@example.com", "password": "password123", "confirm_password": "password123"})
     assert res.status_code == 400
-    assert "Email already registered" in res.json()["detail"]
+    assert "Username or email already registered" in res.json()["detail"]
 
 def test_signup_invalid_data(client):
-    res = client.post("/api/v1/auth/signup", json={"email": "notanemail", "password": "pass"})
+    res = client.post("/api/v1/auth/signup", json={"username": "test4", "email": "notanemail", "password": "pass", "confirm_password": "pass"})
     assert res.status_code == 422 # Pydantic email validation
     
-    res = client.post("/api/v1/auth/signup", json={"email": "test3@example.com", "password": "short"})
+    res = client.post("/api/v1/auth/signup", json={"username": "test5", "email": "test3@example.com", "password": "short", "confirm_password": "short"})
     assert res.status_code == 400
     assert "Password must be at least 8 characters" in res.json()["detail"]
+    
+    res = client.post("/api/v1/auth/signup", json={"username": "test6", "email": "test4@example.com", "password": "password123", "confirm_password": "password124"})
+    assert res.status_code == 400
+    assert "Passwords do not match" in res.json()["detail"]
 
 def test_verification_flow(client, override_get_db):
     from app.api.auth_utils import generate_verification_token
@@ -119,6 +123,7 @@ def test_verification_invalid_and_expired(client, override_get_db):
 
 def test_login_flow(client, override_get_db):
     user = User(
+        username="loginuser",
         email="login@example.com",
         password_hash=get_password_hash("password123"),
         email_verified=True,
@@ -126,13 +131,17 @@ def test_login_flow(client, override_get_db):
     override_get_db.add(user)
     override_get_db.commit()
     
-    res = client.post("/api/v1/auth/login", json={"email": "login@example.com", "password": "wrongpassword"})
+    res = client.post("/api/v1/auth/login", json={"identifier": "login@example.com", "password": "wrongpassword"})
     assert res.status_code == 401
     
-    res = client.post("/api/v1/auth/login", json={"email": "login@example.com", "password": "password123"})
+    res = client.post("/api/v1/auth/login", json={"identifier": "login@example.com", "password": "password123"})
     assert res.status_code == 200
     cookies = res.cookies
     assert "session_id" in cookies
+    
+    # Test username login
+    res_username = client.post("/api/v1/auth/login", json={"identifier": "loginuser", "password": "password123"})
+    assert res_username.status_code == 200
     
     res2 = client.get("/api/v1/test-session", cookies={"session_id": cookies["session_id"]})
     assert res2.status_code == 200
@@ -145,6 +154,7 @@ def test_login_flow(client, override_get_db):
 
 def test_unverified_login(client, override_get_db):
     user = User(
+        username="unvuser",
         email="unv@example.com",
         password_hash=get_password_hash("password123"),
         email_verified=False,
@@ -152,7 +162,7 @@ def test_unverified_login(client, override_get_db):
     override_get_db.add(user)
     override_get_db.commit()
     
-    res = client.post("/api/v1/auth/login", json={"email": "unv@example.com", "password": "password123"})
+    res = client.post("/api/v1/auth/login", json={"identifier": "unv@example.com", "password": "password123"})
     assert res.status_code == 403
 
 def test_legacy_api_key(client, override_get_db):

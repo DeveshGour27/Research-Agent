@@ -1,4 +1,4 @@
-﻿"""FastAPI application entrypoint for Phase 7.1 service boundary."""
+"""FastAPI application entrypoint for Phase 7.1 service boundary."""
 
 from __future__ import annotations
 
@@ -16,18 +16,44 @@ from app.hitl.service import HITLService
 from app.hitl.policy import HITLPolicy
 
 def default_supervisor_factory(hitl_service: HITLService | None = None):
-    # In a real deployment, this builds the full Phase 6 Supervisor.
-    # For Phase 7.4, this is overridden in tests.
     from app.agent.supervisor import Supervisor
     from app.agent.registry import AgentRegistry
-    return Supervisor(registry=AgentRegistry(), hitl_service=hitl_service)
+    from app.agent.specialized.web_agent import WebResearchAgent
+    from app.agent.specialized.rag_agent import RAGAgent
+    from app.agent.llm_planner import LLMPlanner
+    from app.agent.executor import PlanExecutor
+    from app.agent.routing import CapabilityRouter
+    from app.agent.communicator import InProcessCommunicator
+    from app.llm.factory import create_model_gateway
+    from app.config import settings
+    
+    registry = AgentRegistry()
+    registry.register(WebResearchAgent())
+    registry.register(RAGAgent())
+
+    gateway = create_model_gateway(settings)
+    planner = LLMPlanner(provider=gateway)
+    router = CapabilityRouter()
+    communicator = InProcessCommunicator(registry=registry)
+    plan_executor = PlanExecutor(
+        router=router,
+        registry=registry,
+        communicator=communicator
+    )
+    
+    return Supervisor(
+        registry=registry, 
+        hitl_service=hitl_service,
+        planner=planner,
+        plan_executor=plan_executor,
+    )
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Initialize database tables on startup (dev only)
     from app.config import Environment, settings
     if settings.environment != Environment.PRODUCTION:
-        Base.metadata.create_all(bind=engine)
+        pass # Base.metadata.create_all(bind=engine)
     
     # Initialize HITL
     policy = HITLPolicy(
