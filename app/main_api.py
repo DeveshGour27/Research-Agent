@@ -20,6 +20,7 @@ def default_supervisor_factory(hitl_service: HITLService | None = None):
     from app.agent.registry import AgentRegistry
     from app.agent.specialized.web_agent import WebResearchAgent
     from app.agent.specialized.rag_agent import RAGAgent
+    from app.agent.specialized.reasoning_agent import ReasoningAgent
     from app.agent.llm_planner import LLMPlanner
     from app.agent.executor import PlanExecutor
     from app.agent.routing import CapabilityRouter
@@ -27,11 +28,15 @@ def default_supervisor_factory(hitl_service: HITLService | None = None):
     from app.llm.factory import create_model_gateway
     from app.config import settings
     
-    registry = AgentRegistry()
-    registry.register(WebResearchAgent())
-    registry.register(RAGAgent())
-
     gateway = create_model_gateway(settings)
+
+    registry = AgentRegistry()
+    registry.register(WebResearchAgent(gateway=gateway))
+    registry.register(RAGAgent(gateway=gateway))
+    # ReasoningAgent handles 'reasoning' and 'calculation' task types via direct LLM calls.
+    # This is the catch-all for conversational / logic steps that need no external tools.
+    registry.register(ReasoningAgent(gateway=gateway))
+
     planner = LLMPlanner(provider=gateway)
     router = CapabilityRouter()
     communicator = InProcessCommunicator(registry=registry)
@@ -58,7 +63,7 @@ async def lifespan(app: FastAPI):
     # Initialize HITL
     policy = HITLPolicy(
         require_human_tools={"safe_search", "database.write"}, # Example policy config
-        require_human_plans=True
+        require_human_plans=False
     )
     hitl_service = HITLService(session_factory=SessionLocal, policy=policy)
     app.state.hitl_service = hitl_service

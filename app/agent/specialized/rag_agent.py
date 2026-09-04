@@ -13,13 +13,16 @@ from app.agent.contracts import (
 )
 from app.agent.state import AgentState
 from app.exceptions import AgentExecutionError
+from app.logger import get_logger
 from app.retriever import Retriever
+
+logger = get_logger(__name__)
 
 
 class RAGAgent(BaseAgent):
     """Specialized agent for internal RAG retrieval."""
 
-    def __init__(self, retriever: Retriever | None = None) -> None:
+    def __init__(self, retriever: Retriever | None = None, gateway=None) -> None:
         self._identity = AgentIdentity(
             name="rag_agent",
             version="1.0.0",
@@ -33,6 +36,7 @@ class RAGAgent(BaseAgent):
             task_types=frozenset({"rag_search"}),
         )
         self._retriever = retriever or Retriever()
+        self._gateway = gateway
 
     @property
     def identity(self) -> AgentIdentity:
@@ -52,9 +56,15 @@ class RAGAgent(BaseAgent):
 
         user_id = request.context.user_id if request.context else None
         if not user_id:
-            raise AgentExecutionError(
-                "user_id is required for RAG retrieval.",
+            logger.warning("RAGAgent: user_id not available in context, returning empty results.")
+            state = AgentState(finished=True, final_answer="No relevant documents found.")
+            return AgentResult(
                 request=request,
+                state=state,
+                output="No relevant documents found.",
+                success=True,
+                context=request.context,
+                error=None,
             )
 
         try:
@@ -75,9 +85,9 @@ class RAGAgent(BaseAgent):
                     })
                 
                 if not serialized_results:
-                    output = "No relevant documents found."
+                    raw_output = "No relevant documents found."
                 else:
-                    output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
+                    raw_output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
             else:
                 policy = EvidenceSufficiencyPolicy()
                 attempt = 0
@@ -99,19 +109,40 @@ class RAGAgent(BaseAgent):
                             })
                         
                         if not serialized_results:
-                            output = "No relevant documents found."
+                            raw_output = "No relevant documents found."
                         else:
-                            output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
+                            raw_output = json.dumps(serialized_results, indent=2, ensure_ascii=False)
                         break
                         
                     elif reflection.decision == ReflectionDecision.INSUFFICIENT_EVIDENCE:
-                        output = "No relevant documents found."
+                        raw_output = "No relevant documents found."
                         break
                         
                     elif reflection.decision == ReflectionDecision.RETRY_RETRIEVAL:
                         attempt += 1
                 else:
-                    output = "No relevant documents found."
+                    raw_output = "No relevant documents found."
+                
+            # Synthesize output using LLM
+            if self._gateway and raw_output != "No relevant documents found.":
+                from app.llm.models import ModelRequest, TaskType
+                prompt_instruction = (
+                    "You are the AI Research Assistant. Given the user's query and the retrieved documents, "
+                    "synthesize a natural, conversational, and informative answer based ONLY on the provided documents. "
+                    "If the documents do not fully answer the query, state what you do know."
+                )
+                
+                llm_request = ModelRequest(
+                    messages=[
+                        {"role": "system", "content": prompt_instruction},
+                        {"role": "user", "content": f"Query: {normalized_input}\n\nDocuments:\n{raw_output}"},
+                    ],
+                    task_type=TaskType.GENERAL,
+                )
+                response = self._gateway.generate(llm_request)
+                output = response.content or raw_output
+            else:
+                output = raw_output
                 
             success = True
             error = None

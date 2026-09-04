@@ -1,4 +1,4 @@
-﻿"""Application service that isolates chat orchestration from provider SDKs."""
+"""Application service that isolates chat orchestration from provider SDKs."""
 
 from __future__ import annotations
 
@@ -26,7 +26,13 @@ class ChatService:
     ) -> ModelResponse:
         """Generate a response using history plus one new user message."""
         self._validate_user_input(user_input)
-        messages = list(history) + [{"role": "user", "content": user_input}]
+        messages = list(history)
+        if not any(m.get("role") == "system" for m in messages):
+            messages.insert(0, {
+                "role": "system",
+                "content": "You are the AI Research Assistant. Always format your responses using clean, standard Markdown. Use standard hyphens and spaces instead of non-breaking or obscure unicode characters. Avoid returning raw JSON arrays to the user; instead, summarize the data naturally."
+            })
+        messages.append({"role": "user", "content": user_input})
         started_at = perf_counter()
         logger.info(
             "Chat request started",

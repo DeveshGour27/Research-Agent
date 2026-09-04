@@ -117,7 +117,7 @@ def delete_chat(
         raise HTTPException(status_code=404, detail="Chat not found.")
     return None
 
-@router.post("/api/v1/chats/{chat_id}/messages", response_model=SendMessageResponse, tags=["Chats"])
+@router.post("/api/v1/chats/{chat_id}/messages", response_model=SendMessageResponse, status_code=status.HTTP_202_ACCEPTED, tags=["Chats"])
 def send_message(
     chat_id: str,
     body: SendMessageRequest,

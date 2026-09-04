@@ -210,15 +210,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           
           <div className="flex items-center justify-between group cursor-pointer">
             <div className="flex items-center space-x-3 truncate">
-              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] border border-gray-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] border border-gray-700 flex items-center justify-center text-sm font-bold flex-shrink-0 text-white">
                 {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
               </div>
               <div className="truncate">
-                <div className="text-sm font-medium truncate" title={user?.email}>{user?.username || user?.email || "User"}</div>
+                <div className="text-sm font-medium text-white truncate" title={user?.email || "User"}>{user?.username || user?.email || "User"}</div>
                 <div className="text-xs text-gray-500">Member</div>
               </div>
             </div>
-            <button onClick={handleLogout} className="text-gray-500 hover:text-white transition opacity-0 group-hover:opacity-100">
+            <button onClick={handleLogout} className="text-gray-500 hover:text-white transition opacity-0 group-hover:opacity-100" title="Logout">
               <LogOut className="h-4 w-4" />
             </button>
           </div>

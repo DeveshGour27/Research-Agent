@@ -232,9 +232,33 @@ class AsyncJobManager:
                 logger.info(f"Worker {self.worker_id} failed to claim job {job_id} (already claimed/cancelled)")
                 return
 
-            context = AgentExecutionContext(task=goal, metadata={"job_id": job_id})
+            def _get_chat_history():
+                try:
+                    with self._session_factory() as session:
+                        from app.db.models import Message, Conversation
+                        from sqlalchemy import select
+                        msg = session.execute(select(Message).where(Message.job_id == job_id)).scalar_one_or_none()
+                        if not msg: return None
+                        chat = session.execute(select(Conversation).where(Conversation.chat_id == msg.chat_id)).scalar_one_or_none()
+                        if not chat: return None
+                        msgs = sorted(chat.messages, key=lambda x: x.created_at)
+                        history = []
+                        for m in msgs:
+                            history.append(f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}")
+                            if m.message_id == msg.message_id:
+                                break
+                        return "\n\n".join(history), chat.chat_id
+                except Exception as e:
+                    logger.error(f"Failed to fetch chat history for job {job_id}: {e}")
+                    return None
+            
+            history_data = await asyncio.to_thread(_get_chat_history)
+            effective_goal = history_data[0] if history_data else goal
+            chat_id = history_data[1] if history_data else None
+
+            context = AgentExecutionContext(task=effective_goal, user_id=user_id, chat_id=chat_id, metadata={"job_id": job_id})
             self._job_contexts[job_id] = context
-            request = AgentRequest(input_text=goal, context=context, metadata={"job_id": job_id})
+            request = AgentRequest(input_text=effective_goal, context=context, metadata={"job_id": job_id, "user_id": user_id})
             supervisor = self._supervisor_factory()
 
             def _update_result(status: str, result: str | None = None, error_message: str | None = None):
@@ -258,11 +282,19 @@ class AsyncJobManager:
                     timeout=self._job_timeout
                 )
                 
-                await asyncio.to_thread(
-                    _update_result,
-                    status="COMPLETED",
-                    result=str(result.output) if result.output else "Success"
-                )
+                if result.success and result.output is not None:
+                    await asyncio.to_thread(
+                        _update_result,
+                        status="COMPLETED",
+                        result=str(result.output)
+                    )
+                else:
+                    error_msg = str(result.error) if result.error else "Agent completed without providing an output."
+                    await asyncio.to_thread(
+                        _update_result,
+                        status="FAILED",
+                        error_message=error_msg
+                    )
 
             except asyncio.TimeoutError:
                 context.mark_timed_out()

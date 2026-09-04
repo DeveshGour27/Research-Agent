@@ -1,19 +1,19 @@
-"""Web search tool using SearXNG HTTP API."""
+"""Web search tool using local SearXNG instance."""
 
 from __future__ import annotations
 
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
-from app.config import settings
 from app.exceptions import ToolExecutionError
 from app.tools.base import BaseTool
 
 
 class WebSearchTool(BaseTool):
-    """Perform a web search using the configured provider (e.g., SearXNG)."""
+    """Perform a web search using local SearXNG instance (http://localhost:8080)."""
 
     name = "web_search"
     description = (
@@ -31,6 +31,9 @@ class WebSearchTool(BaseTool):
         "required": ["query"],
     }
 
+    _DDG_URL = "https://api.duckduckgo.com/"
+    _TIMEOUT = 10
+
     def execute(self, **kwargs: object) -> str:
         query = str(kwargs.get("query", "")).strip()
         if not query:
@@ -39,42 +42,19 @@ class WebSearchTool(BaseTool):
                 tool_name=self.name,
             )
 
-        provider = settings.web_search_provider.lower()
-        if provider != "searxng":
-            raise ToolExecutionError(
-                f"Unsupported web search provider: {provider}",
-                tool_name=self.name,
-            )
-
-        max_results = settings.web_search_max_results
-        timeout = settings.web_search_timeout_seconds
-        base_url = settings.searxng_base_url.rstrip("/")
-
-        import urllib.parse
-        params = urllib.parse.urlencode({
-            "q": query,
-            "format": "json"
-        })
-        url = f"{base_url}/search?{params}"
-        
+        url = "http://localhost:8080/search"
+        params = urllib.parse.urlencode({"q": query, "format": "json"})
         req = urllib.request.Request(
-            url,
+            f"{url}?{params}",
             headers={"User-Agent": "ResearchAgent/1.0"},
-            method="GET",
         )
 
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                response_body = response.read().decode("utf-8")
-                result_data = json.loads(response_body)
-        except urllib.error.HTTPError as error:
-            raise ToolExecutionError(
-                f"Web search provider returned HTTP {error.code}: {error.reason}",
-                tool_name=self.name,
-            )
+            with urllib.request.urlopen(req, timeout=self._TIMEOUT) as response:
+                data = json.loads(response.read().decode("utf-8"))
         except urllib.error.URLError as error:
             raise ToolExecutionError(
-                f"Failed to connect to web search provider: {error.reason}",
+                f"Failed to connect to SearXNG: {getattr(error, 'reason', error)}",
                 tool_name=self.name,
             )
         except TimeoutError:
@@ -84,7 +64,7 @@ class WebSearchTool(BaseTool):
             )
         except json.JSONDecodeError:
             raise ToolExecutionError(
-                "Web search provider returned malformed JSON.",
+                "SearXNG returned malformed JSON.",
                 tool_name=self.name,
             )
         except Exception as error:
@@ -93,25 +73,23 @@ class WebSearchTool(BaseTool):
                 tool_name=self.name,
             )
 
-        # Normalize the results
-        results = result_data.get("results", [])
-        if not isinstance(results, list):
-            raise ToolExecutionError(
-                "Web search provider returned an invalid results format.",
-                tool_name=self.name,
-            )
+        results: list[dict[str, str]] = []
+        for item in data.get("results", []):
+            if len(results) >= 5:
+                break
+            
+            title = item.get("title", "").strip()
+            url_str = item.get("url", "").strip()
+            content = item.get("content", "").strip()
+            
+            if title and url_str:
+                results.append({
+                    "title": title,
+                    "url": url_str,
+                    "snippet": content,
+                })
 
-        normalized_results = []
-        for item in results[:max_results]:
-            if not isinstance(item, dict):
-                continue
-            normalized_results.append({
-                "title": item.get("title", ""),
-                "url": item.get("url", ""),
-                "snippet": item.get("content", ""),
-            })
-
-        if not normalized_results:
+        if not results:
             return "No results found."
 
-        return json.dumps(normalized_results, indent=2, ensure_ascii=False)
+        return json.dumps(results, indent=2, ensure_ascii=False)

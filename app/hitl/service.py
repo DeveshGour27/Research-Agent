@@ -18,10 +18,17 @@ from app.hitl.models import HITLPolicyDecision, HITLRequestType, HITLRequestStat
 from app.hitl.policy import HITLPolicy
 
 
+class SetEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (set, frozenset)):
+            return sorted(list(obj))
+        return super().default(obj)
+
+
 def _compute_fingerprint(components: list[Any]) -> str:
     """Compute a deterministic SHA-256 fingerprint from components."""
     # Serialize canonically (sorted keys)
-    serialized = json.dumps(components, sort_keys=True, separators=(",", ":"))
+    serialized = json.dumps(components, sort_keys=True, separators=(",", ":"), cls=SetEncoder)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
@@ -149,7 +156,7 @@ class HITLService:
                 request_id = pending.request_id
             else:
                 import json, dataclasses
-                payload_json = json.dumps(dataclasses.asdict(plan))
+                payload_json = json.dumps(dataclasses.asdict(plan), cls=SetEncoder)
                 new_req = repo.create_hitl_request(
                     job_id=job_id,
                     run_id=run_id,

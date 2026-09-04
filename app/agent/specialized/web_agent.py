@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from app.agent.contracts import (
     AgentCapabilities,
     AgentIdentity,
@@ -13,12 +14,15 @@ from app.agent.state import AgentState
 from app.exceptions import AgentExecutionError, ToolExecutionError
 from app.tools.registry import ToolRegistry
 from app.tools.web_search import WebSearchTool
+from app.llm.models import ModelRequest, TaskType
+from app.logger import get_logger
 
+logger = get_logger(__name__)
 
 class WebResearchAgent(BaseAgent):
     """Specialized agent for web research."""
 
-    def __init__(self) -> None:
+    def __init__(self, gateway=None) -> None:
         self._identity = AgentIdentity(
             name="web_research_agent",
             version="1.0.0",
@@ -31,9 +35,9 @@ class WebResearchAgent(BaseAgent):
             retrieval=False,
             task_types=frozenset({"web_search"}),
         )
-        # Strictly scoped registry
         self._tool_registry = ToolRegistry()
         self._tool_registry.register(WebSearchTool())
+        self._gateway = gateway
 
     @property
     def identity(self) -> AgentIdentity:
@@ -54,8 +58,29 @@ class WebResearchAgent(BaseAgent):
         tool = self._tool_registry.get("web_search")
 
         try:
-            # Deterministic execution
-            output = tool.execute(query=normalized_input)
+            # Execute tool to get raw JSON results
+            raw_output = tool.execute(query=normalized_input)
+            
+            # Format output using LLM if available, otherwise fallback to raw json
+            if self._gateway and raw_output != "No results found.":
+                prompt_instruction = (
+                    "You are the AI Research Assistant. Given the user's query and the following raw web search results, "
+                    "synthesize a natural, conversational, and informative answer. Cite your sources where appropriate. "
+                    "Always format your responses using clean, standard Markdown. Use standard hyphens and spaces instead of non-breaking or obscure unicode characters. Avoid returning raw JSON."
+                )
+                
+                llm_request = ModelRequest(
+                    messages=[
+                        {"role": "system", "content": prompt_instruction},
+                        {"role": "user", "content": f"Query: {normalized_input}\n\nSearch Results: {raw_output}"},
+                    ],
+                    task_type=TaskType.GENERAL,
+                )
+                response = self._gateway.generate(llm_request)
+                output = response.content or raw_output
+            else:
+                output = raw_output
+                
             success = True
             error = None
         except ToolExecutionError as e:

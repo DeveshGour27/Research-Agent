@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import json
 from app.config import Settings
 from app.exceptions import ConfigurationError
@@ -38,17 +38,20 @@ def create_model_gateway(configuration: Settings) -> ModelGateway:
     else:
         # Fallback to legacy configuration
         caps = {ModelCapability.TEXT_GENERATION, ModelCapability.REASONING, ModelCapability.TOOL_CALLING, ModelCapability.STRUCTURED_OUTPUT, ModelCapability.LONG_CONTEXT}
+        max_tokens = getattr(configuration, "llm_max_output_tokens", 2048)
         profiles.append(ModelProfile(
             provider=configuration.llm_provider,
             model_id=configuration.llm_model,
             capabilities=caps,
-            priority=100
+            priority=100,
+            max_output_tokens=max_tokens,
         ))
         profiles.append(ModelProfile(
             provider=configuration.llm_provider,
             model_id=configuration.llm_fallback_model,
             capabilities=caps,
-            priority=50
+            priority=50,
+            max_output_tokens=max_tokens,
         ))
 
     router = ModelRouter(profiles=profiles)

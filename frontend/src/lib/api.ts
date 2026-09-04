@@ -53,7 +53,7 @@ export const api = {
   
   getChats: () => fetchAPI("/api/v1/chats"),
   createChat: () => fetchAPI("/api/v1/chats", { method: "POST" }),
-  getChat: (chatId: string) => fetchAPI(`/api/v1/chats/${chatId}`),
+  getChat: (chatId: string) => fetchAPI(`/api/v1/chats/${chatId}?t=${Date.now()}`),
   deleteChat: (chatId: string) => fetchAPI(`/api/v1/chats/${chatId}`, { method: "DELETE" }),
   
   sendMessage: (chatId: string, content: string) => 

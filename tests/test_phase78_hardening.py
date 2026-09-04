@@ -86,7 +86,7 @@ def test_pending_job_restart_recovery(db_session, test_user_a):
         # 2. Create a Job Manager (simulating process start)
         class DummySupervisor:
             def execute(self, req):
-                return type("Result", (), {"output": "dummy"})()
+                return type("Result", (), {"output": "dummy", "success": True})()
 
         manager = AsyncJobManager(
             session_factory=_TestingSessionLocal,

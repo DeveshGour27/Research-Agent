@@ -205,53 +205,70 @@ class Supervisor(BaseAgent):
         failure_context: list[StepResult] | None = None
 
         while True:
-            # 1. Generate plan or get approved plan
+            # 1. Generate plan or get approved plan (with retry for transient LLM JSON failures)
             from app.exceptions import PlanCreationError, PlanValidationError
-            try:
-                plan = None
-                if self._hitl_service and not previous_plan:
-                    # check for an already-approved plan for this checkpoint
-                    plan = self._hitl_service.get_approved_plan(context)
-                    if plan:
-                        logger.info("Restored approved plan for execution.")
+            _MAX_PLAN_ATTEMPTS = 3
+            plan = None
+            last_plan_error: Exception | None = None
 
-                if not plan:
-                    plan = self._planner.generate_plan(
-                        goal=normalized_input,
-                        context=context,
-                        previous_plan=previous_plan,
-                        failure_context=failure_context,
+            for _plan_attempt in range(_MAX_PLAN_ATTEMPTS):
+                try:
+                    if self._hitl_service and not previous_plan and _plan_attempt == 0:
+                        # check for an already-approved plan for this checkpoint
+                        plan = self._hitl_service.get_approved_plan(context)
+                        if plan:
+                            logger.info("Restored approved plan for execution.")
+
+                    if not plan:
+                        plan = self._planner.generate_plan(
+                            goal=normalized_input,
+                            context=context,
+                            previous_plan=previous_plan,
+                            failure_context=failure_context,
+                        )
+
+                        logger.info(
+                            "Plan generated",
+                            extra={
+                                "plan_id": plan.plan_id,
+                                "step_count": len(plan.steps),
+                                "is_replan": previous_plan is not None,
+                                "attempt": _plan_attempt + 1,
+                            },
+                        )
+
+                        # Phase 5.8: plan generated event
+                        if span:
+                            _emit_safe(obs_events.PlanGeneratedEvent(
+                                trace_id=span.trace_id, run_id=span.run_id,
+                                span_id=span.span_id, parent_span_id=span.parent_span_id,
+                                plan_id=plan.plan_id, step_count=len(plan.steps),
+                                is_replan=previous_plan is not None,
+                            ))
+
+                        # 2. Validate plan
+                        if self._plan_validator:
+                            self._plan_validator.validate(plan)
+                            
+                        # 2b. Evaluate HITL Policy
+                        if self._hitl_service:
+                            self._hitl_service.evaluate_and_enforce_plan(plan, context)
+
+                    # Plan is good — break out of retry loop
+                    last_plan_error = None
+                    break
+
+                except (PlanCreationError, PlanValidationError) as e:
+                    last_plan_error = e
+                    logger.warning(
+                        f"Plan generation attempt {_plan_attempt + 1}/{_MAX_PLAN_ATTEMPTS} failed: {e}. "
+                        + ("Retrying..." if _plan_attempt + 1 < _MAX_PLAN_ATTEMPTS else "All attempts exhausted.")
                     )
+                    plan = None  # ensure we retry
 
-                    logger.info(
-                        "Plan generated",
-                        extra={
-                            "plan_id": plan.plan_id,
-                            "step_count": len(plan.steps),
-                            "is_replan": previous_plan is not None,
-                        },
-                    )
-
-                    # Phase 5.8: plan generated event
-                    if span:
-                        _emit_safe(obs_events.PlanGeneratedEvent(
-                            trace_id=span.trace_id, run_id=span.run_id,
-                            span_id=span.span_id, parent_span_id=span.parent_span_id,
-                            plan_id=plan.plan_id, step_count=len(plan.steps),
-                            is_replan=previous_plan is not None,
-                        ))
-
-                    # 2. Validate plan
-                    if self._plan_validator:
-                        self._plan_validator.validate(plan)
-                        
-                    # 2b. Evaluate HITL Policy
-                    if self._hitl_service:
-                        self._hitl_service.evaluate_and_enforce_plan(plan, context)
-
-            except (PlanCreationError, PlanValidationError) as e:
-                # If we cannot even generate or validate a structurally sound plan, fail execution deterministically
-                logger.error(f"Plan generation failed: {e}")
+            if last_plan_error is not None or plan is None:
+                # All attempts failed — deterministic failure
+                logger.error(f"Plan generation failed after {_MAX_PLAN_ATTEMPTS} attempts: {last_plan_error}")
                 
                 # Phase 5.8: execution completed event
                 if span:
@@ -273,7 +290,7 @@ class Supervisor(BaseAgent):
                     error=AgentExecutionError(
                         "Plan generation failed.",
                         request=request,
-                        details={"error_type": type(e).__name__, "message": str(e)},
+                        details={"error_type": type(last_plan_error).__name__, "message": str(last_plan_error)},
                     ),
                 )
 

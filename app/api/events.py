@@ -110,7 +110,7 @@ def get_job_events(db: Session, job: Job) -> list[ResearchJobEvent]:
                 timestamp=job.completed_at.isoformat(),
                 sequence=90000,
                 source="job",
-                payload={}
+                payload={"output": job.result}
             ))
         elif job.status == "FAILED":
             events.append(ResearchJobEvent(

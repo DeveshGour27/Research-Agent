@@ -541,9 +541,13 @@ async def stream_research_job_events(
                     last_yielded_seq = ev.sequence
                     
             if current_job.status in ("COMPLETED", "FAILED", "CANCELLED"):
-                # Job is terminal, end the stream
+                # Job is terminal. Allow buffers to flush to client before closing socket.
+                await asyncio.sleep(0.5)
                 break
                 
+            # Send an SSE comment as a heartbeat to keep the connection alive
+            # through browsers, proxies and load balancers. Clients ignore comments.
+            yield ": heartbeat\n\n"
             await asyncio.sleep(1.0)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
