@@ -135,7 +135,24 @@ class ModelGateway:
                             failed_providers.add(profile.provider)
                         # Permanent error on this provider/model, fallback to next eligible profile
                         break
-                    # Transient error, retry same profile
+
+                    # If 429 rate limit, evaluate suggested backoff time
+                    if getattr(e, "status_code", None) == 429:
+                        import re
+                        match = re.search(r"try again in ([0-9.]+)s", str(e), re.I)
+                        if match:
+                            suggested_wait = float(match.group(1))
+                            if suggested_wait > 6.0:
+                                # Switch to next fallback profile immediately rather than stalling
+                                logger.info(
+                                    "Rate limit backoff exceeds threshold, falling back to next profile",
+                                    extra={"suggested_wait": suggested_wait, "model": profile.model_id}
+                                )
+                                break
+                            time.sleep(suggested_wait + 0.5)
+                            continue
+
+                    # Transient error, retry same profile with exponential backoff
                     time.sleep(1.0 * (attempt + 1))
                 except Exception as e:
                     last_error = e

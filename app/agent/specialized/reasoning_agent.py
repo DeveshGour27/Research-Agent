@@ -88,7 +88,11 @@ class ReasoningAgent(BaseAgent):
         try:
             prompt_instruction = (
                 "You are the AI Research Assistant, an intelligent agent built for research, reasoning, and analysis. "
-                "Provide a clear, accurate, and direct answer. Always format your responses using clean, standard Markdown. Use standard hyphens and spaces instead of non-breaking or obscure unicode characters. Avoid returning raw JSON."
+                "Provide a clear, accurate, and direct answer. Always format your responses using clean, standard Markdown. "
+                "When compiling research discoveries, preserve the discovery title, institution name, and source links [Source](url) "
+                "from the provided research evidence, and ensure any requested sentence constraints (e.g., exactly two sentences for importance) "
+                "are strictly preserved. For mathematical equations, use $$ for block math and $ for inline math. "
+                "Avoid returning raw JSON."
             )
             if task_type == "calculation":
                 prompt_instruction += " For mathematical questions, compute the exact result."

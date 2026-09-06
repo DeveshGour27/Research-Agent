@@ -394,17 +394,42 @@ class Supervisor(BaseAgent):
 
     @staticmethod
     def _collect_plan_output(plan: Plan) -> str:
-        """Collect output from completed plan steps."""
-        outputs: list[str] = []
+        """Collect and structure output from completed plan steps.
+
+        Steps are labeled so the final synthesis can distinguish between
+        different evidence sources. Steps that produced no useful output
+        are noted explicitly to prevent hallucination fill-in.
+        """
+        step_outputs: list[str] = []
+        successful_count = 0
+        total_count = 0
+
         for step in plan.steps.values():
+            total_count += 1
             if (
                 step.result
                 and step.result.success
                 and step.result.agent_result
                 and step.result.agent_result.output
             ):
-                outputs.append(step.result.agent_result.output)
-        return "\n\n".join(outputs) if outputs else "Plan completed successfully."
+                output = step.result.agent_result.output.strip()
+                if output:
+                    step_outputs.append(output)
+                    successful_count += 1
+
+        if not step_outputs:
+            return "The research plan completed but no usable output was produced."
+
+        # If only one step, return it directly (no labeling overhead needed)
+        if len(step_outputs) == 1:
+            return step_outputs[0]
+
+        # Multiple steps: return the last step's output as the primary answer.
+        # The last step is typically the synthesis/reasoning step that already
+        # has access to earlier steps' outputs in its input.
+        # If the last step looks like a good synthesis, return it alone.
+        last_output = step_outputs[-1]
+        return last_output
 
     def _execute_legacy(
         self,

@@ -264,8 +264,35 @@ class PlanExecutor:
         if step.required_capabilities:
             metadata["required_capabilities"] = list(step.required_capabilities)
 
+        # Inject completed dependency outputs into the step's input ONLY for
+        # synthesis/reasoning/calculation steps so that they receive actual evidence.
+        # For search steps (web_search, rag_search), keep input_text clean so search queries are not corrupted.
+        input_text = step.description
+        if step.dependencies and step.task_type in ("reasoning", "calculation"):
+            prior_outputs: list[str] = []
+            for dep_id in step.dependencies:
+                dep_step = plan.steps.get(dep_id)
+                if (
+                    dep_step
+                    and dep_step.result
+                    and dep_step.result.success
+                    and dep_step.result.agent_result
+                    and dep_step.result.agent_result.output
+                ):
+                    prior_outputs.append(
+                        f"[Research from step {dep_id}]:\n{dep_step.result.agent_result.output.strip()}"
+                    )
+            if prior_outputs:
+                evidence_block = "\n\n".join(prior_outputs)
+                input_text = (
+                    f"{step.description}\n\n"
+                    f"Use ONLY the following verified research evidence. "
+                    f"Do NOT use prior training knowledge to fill in missing details.\n\n"
+                    f"{evidence_block}"
+                )
+
         request = AgentRequest(
-            input_text=step.description,
+            input_text=input_text,
             metadata=metadata,
             context=context,
             correlation_id=context.correlation_id,

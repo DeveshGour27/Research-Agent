@@ -94,7 +94,7 @@ class Settings(BaseSettings):
         description="Sampling temperature for chat generation.",
     )
     llm_max_output_tokens: int = Field(
-        default=1_024,
+        default=4_096,
         gt=0,
         description="Maximum number of tokens generated for one response.",
     )

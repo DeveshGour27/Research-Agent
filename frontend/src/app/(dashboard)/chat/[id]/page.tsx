@@ -6,6 +6,9 @@ import { api } from "@/lib/api";
 import { Send, Mic, Plus, Bot, Share, MoreHorizontal } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -240,35 +243,41 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           <div className="space-y-6">
             {messages.map(msg => (
               <div key={msg.message_id} className={`flex gap-4 ${msg.role === "assistant" ? "flex-row-reverse" : ""}`}>
-                <div className="flex-shrink-0 mt-1">
-                  {msg.role === "user" ? (
+                {msg.role === "user" && (
+                  <div className="flex-shrink-0 mt-1">
                     <div className="w-8 h-8 rounded-full bg-[#1A1A1A] border border-gray-700 flex items-center justify-center text-sm font-bold text-white">
                       U
                     </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black">
-                      <Bot className="h-5 w-5" />
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
                 <div className={`flex-1 min-w-0 ${msg.role === "assistant" ? "text-right" : "text-left"}`}>
                   <div className="text-sm font-medium mb-1 text-gray-400 capitalize">{msg.role}</div>
-                  <div className="text-gray-200 leading-relaxed inline-block text-left max-w-full overflow-hidden">
+                  <div 
+                    className={`leading-relaxed inline-block text-left max-w-[90%] overflow-hidden ${
+                      msg.role === "assistant" 
+                        ? "text-gray-200" 
+                        : "bg-blue-600 text-white px-5 py-4 rounded-3xl shadow-sm rounded-tl-sm"
+                    }`}
+                  >
                     <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
                       components={{
                         table: ({node, ...props}) => <div className="overflow-x-auto"><table className="border-collapse border border-gray-700 my-4 w-full text-sm" {...props} /></div>,
-                        th: ({node, ...props}) => <th className="border border-gray-700 bg-gray-800 px-4 py-2 text-left" {...props} />,
+                        th: ({node, ...props}) => <th className="border border-gray-600 bg-black/30 px-4 py-2 text-left" {...props} />,
                         td: ({node, ...props}) => <td className="border border-gray-700 px-4 py-2" {...props} />,
-                        a: ({node, ...props}) => <a className="text-blue-400 hover:underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                        a: ({node, ...props}) => <a className="text-blue-400 hover:underline font-medium" target="_blank" rel="noopener noreferrer" {...props} />,
                         p: ({node, ...props}) => <p className="mb-3 last:mb-0 whitespace-pre-wrap" {...props} />,
-                        ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3" {...props} />,
-                        ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3" {...props} />,
+                        ul: ({node, ...props}) => <ul className="list-disc pl-6 mb-3" {...props} />,
+                        ol: ({node, ...props}) => <ol className="list-decimal pl-6 mb-3" {...props} />,
                         li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                        strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />
+                        strong: ({node, ...props}) => <strong className="font-bold text-gray-100" {...props} />,
+                        h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-3 mt-4 text-white" {...props} />,
+                        h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-4 text-white" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2 mt-3 text-white" {...props} />,
                       }}
                     >
-                      {msg.content}
+                      {msg.content.replace(/\\\[/g, "$$$$").replace(/\\\]/g, "$$$$").replace(/\\\(/g, "$$").replace(/\\\)/g, "$$")}
                     </ReactMarkdown>
                   </div>
                 </div>
@@ -276,11 +285,6 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             ))}
             {agentState && (
               <div className="flex gap-4 flex-row-reverse">
-                <div className="flex-shrink-0 mt-1">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black animate-pulse">
-                    <Bot className="h-5 w-5" />
-                  </div>
-                </div>
                 <div className="flex-1 min-w-0 flex items-center h-8 justify-end text-right">
                   <div className="text-sm font-medium text-purple-400 animate-pulse">{agentState}</div>
                 </div>

@@ -1,4 +1,8 @@
-"""Web search tool using local SearXNG instance."""
+"""Web search tool using local SearXNG instance.
+
+Returns results with title, url, snippet, and publication date preserved so
+downstream agents can filter by year or recency.
+"""
 
 from __future__ import annotations
 
@@ -11,6 +15,11 @@ from typing import Any
 from app.exceptions import ToolExecutionError
 from app.tools.base import BaseTool
 
+# How many results to fetch from SearXNG (enough to have good coverage after filtering)
+_FETCH_LIMIT = 20
+# How many results to return to the agent
+_RETURN_LIMIT = 10
+
 
 class WebSearchTool(BaseTool):
     """Perform a web search using local SearXNG instance (http://localhost:8080)."""
@@ -18,7 +27,7 @@ class WebSearchTool(BaseTool):
     name = "web_search"
     description = (
         "Search the web for up-to-date information on a given topic. "
-        "Returns a list of relevant search results including titles, URLs, and snippets."
+        "Returns a list of relevant search results including titles, URLs, snippets, and publication dates."
     )
     input_schema: dict[str, Any] = {
         "type": "object",
@@ -31,7 +40,6 @@ class WebSearchTool(BaseTool):
         "required": ["query"],
     }
 
-    _DDG_URL = "https://api.duckduckgo.com/"
     _TIMEOUT = 10
 
     def execute(self, **kwargs: object) -> str:
@@ -75,19 +83,30 @@ class WebSearchTool(BaseTool):
 
         results: list[dict[str, str]] = []
         for item in data.get("results", []):
-            if len(results) >= 5:
+            if len(results) >= _RETURN_LIMIT:
                 break
-            
+
             title = item.get("title", "").strip()
             url_str = item.get("url", "").strip()
             content = item.get("content", "").strip()
-            
+
+            # Capture publication date — SearXNG uses different field names across engines
+            pub_date: str = (
+                item.get("publishedDate")
+                or item.get("published_date")
+                or item.get("date")
+                or ""
+            )
+
             if title and url_str:
-                results.append({
+                entry: dict[str, str] = {
                     "title": title,
                     "url": url_str,
                     "snippet": content,
-                })
+                }
+                if pub_date:
+                    entry["date"] = str(pub_date).strip()
+                results.append(entry)
 
         if not results:
             return "No results found."

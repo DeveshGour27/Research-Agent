@@ -5,3 +5,29 @@ search:
   formats:
     - html
     - json
+  suspended_times:
+    SearxEngineAccessDenied: 0
+    SearxEngineCaptcha: 0
+    SearxEngineTooManyRequests: 0
+    cf_SearxEngineCaptcha: 0
+    cf_SearxEngineAccessDenied: 0
+    recaptcha_SearxEngineCaptcha: 0
+engines:
+  - name: google cse
+    engine: google_cse
+    disabled: false
+  - name: google news
+    engine: google_news
+    disabled: false
+    categories: [web, news]
+  - name: bing
+    engine: bing
+    disabled: false
+  - name: arxiv
+    engine: arxiv
+    disabled: false
+    categories: [web, science]
+
+
+
+
