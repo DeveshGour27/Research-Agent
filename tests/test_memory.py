@@ -935,3 +935,101 @@ def test_agent_memory_update_failure_does_not_fail_run(
 
     assert state.final_answer == "Normal answer."
     assert store.get_memories(user.user_id) == []
+
+
+def test_sensitivity_filter_redacts_credentials_and_secrets(tmp_path: Path) -> None:
+    store = _store(tmp_path / "memory.json")
+    user = store.create_user(email="secrets@example.com")
+
+    # API key redaction
+    mem1 = store.save_memory(user.user_id, "User key is sk-abcdefghijklmnopqrstuvwxyz123456")
+    assert "sk-" not in mem1.content
+    assert "[REDACTED_OPENAI_API_KEY]" in mem1.content
+
+    # Bearer token redaction
+    mem2 = store.save_memory(user.user_id, "Auth token is Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xyz")
+    assert "Bearer" not in mem2.content or "[REDACTED_BEARER_TOKEN]" in mem2.content
+
+    # Private key redaction
+    private_key_content = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA...\n-----END RSA PRIVATE KEY-----"
+    mem3 = store.save_memory(user.user_id, f"SSH key: {private_key_content}")
+    assert "BEGIN RSA PRIVATE KEY" not in mem3.content
+    assert "[REDACTED_PRIVATE_KEY]" in mem3.content
+
+    # Password redaction
+    mem4 = store.save_memory(user.user_id, "User password: MySuperSecretPassword123!")
+    assert "MySuperSecretPassword123!" not in mem4.content
+    assert "[REDACTED_SECRET]" in mem4.content
+
+
+def test_memory_deletion_and_gdpr_right_to_be_forgotten(tmp_path: Path) -> None:
+    store = _store(tmp_path / "memory.json")
+    user = store.create_user(email="gdpr@example.com")
+
+    m1 = store.save_memory(user.user_id, "Memory 1")
+    m2 = store.save_memory(user.user_id, "Memory 2")
+    m3 = store.save_memory(user.user_id, "Memory 3")
+
+    assert len(store.get_memories(user.user_id)) == 3
+
+    # Delete single memory
+    deleted = store.delete_memory(user.user_id, m2.memory_id)
+    assert deleted is True
+    remaining = store.get_memories(user.user_id)
+    assert len(remaining) == 2
+    assert m2.memory_id not in [m.memory_id for m in remaining]
+
+    # Deleting nonexistent memory returns False
+    assert store.delete_memory(user.user_id, "nonexistent-id") is False
+
+    # GDPR delete all user memories
+    deleted_count = store.delete_user_memories(user.user_id)
+    assert deleted_count == 2
+    assert store.get_memories(user.user_id) == []
+
+
+def test_memory_expiration_and_retention_purge(tmp_path: Path) -> None:
+    store = _store(tmp_path / "memory.json")
+    user = store.create_user(email="retention@example.com")
+
+    # Save memory with TTL of 30 days (future)
+    future_mem = store.save_memory(user.user_id, "Future memory", ttl_days=30)
+    assert future_mem.expires_at is not None
+
+    # Save memory already expired
+    import datetime
+    expired_timestamp = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat()
+    raw_data = store._read_data()
+    raw_data["memories"][user.user_id].append({
+        "memory_id": "expired-mem-id",
+        "user_id": user.user_id,
+        "content": "Expired memory",
+        "created_at": expired_timestamp,
+        "expires_at": expired_timestamp,
+    })
+    store._write_data(raw_data)
+
+    # get_memories should filter out expired
+    active = store.get_memories(user.user_id)
+    assert len(active) == 1
+    assert active[0].memory_id == future_mem.memory_id
+
+    # purge_expired_memories should remove it from underlying store
+    purged = store.purge_expired_memories()
+    assert purged == 1
+
+
+def test_concurrent_memory_writes_are_thread_safe(tmp_path: Path) -> None:
+    import concurrent.futures
+    store = _store(tmp_path / "memory.json")
+    user = store.create_user(email="threads@example.com")
+
+    def _write_item(i: int):
+        store.save_memory(user.user_id, f"Thread memory {i}")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(_write_item, i) for i in range(25)]
+        concurrent.futures.wait(futures)
+
+    memories = store.get_memories(user.user_id)
+    assert len(memories) == 25

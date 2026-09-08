@@ -92,7 +92,8 @@ class PlanExecutor:
                         reason="cancelled",
                     ))
                 raise AgentCancellationError("Execution cancelled via context.", request=None)
-            if context.is_timed_out:
+            if context.is_timed_out or context.is_expired:
+                context.mark_timed_out()
                 logger.info("execution_timed_out", extra={"plan_id": plan.plan_id})
                 plan.status = PlanStatus.FAILED
                 if span:
@@ -118,6 +119,28 @@ class PlanExecutor:
                 break
 
             for step in ready_steps:
+                if context.is_cancelled:
+                    logger.info("execution_cancelled", extra={"plan_id": plan.plan_id})
+                    plan.status = PlanStatus.FAILED
+                    if span:
+                        _emit_safe(obs_events.TimeoutCancellationEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            reason="cancelled",
+                        ))
+                    raise AgentCancellationError("Execution cancelled via context.", request=None)
+                if context.is_timed_out or context.is_expired:
+                    context.mark_timed_out()
+                    logger.info("execution_timed_out", extra={"plan_id": plan.plan_id})
+                    plan.status = PlanStatus.FAILED
+                    if span:
+                        _emit_safe(obs_events.TimeoutCancellationEvent(
+                            trace_id=span.trace_id, run_id=span.run_id,
+                            span_id=span.span_id, parent_span_id=span.parent_span_id,
+                            reason="timed_out",
+                        ))
+                    raise AgentTimeoutError("Execution timed out via context.", request=None)
+
                 if steps_executed >= policy.max_steps:
                     logger.warning(
                         "Max steps reached",

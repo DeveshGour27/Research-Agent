@@ -168,6 +168,29 @@ class Settings(BaseSettings):
         gt=0,
         description="Rate-limit sliding window duration in seconds.",
     )
+    max_concurrent_jobs_per_user: int = Field(
+        default=3,
+        gt=0,
+        description="Maximum number of active (pending/running) jobs allowed per user.",
+    )
+    auth_rate_limit_requests: int = Field(
+        default=10,
+        gt=0,
+        description="Maximum authentication requests allowed per IP within the window.",
+    )
+    auth_rate_limit_window_seconds: int = Field(
+        default=60,
+        gt=0,
+        description="Window in seconds for authentication rate limiting.",
+    )
+    mcp_servers: str = Field(
+        default="{}",
+        description="JSON string configuration of MCP servers.",
+    )
+    mcp_allowed_servers: list[str] = Field(
+        default_factory=list,
+        description="Explicit allowlist of MCP server names permitted to connect.",
+    )
 
     # ------------------------------------------------------------------ #
     # Multi-Model Gateway (Phase 15)

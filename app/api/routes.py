@@ -501,12 +501,20 @@ async def stream_research_job_events(
     async def event_generator():
         from app.api.events import get_job_events
         import json
+        import time
         
         last_yielded_seq = -1
+        stream_started_at = time.monotonic()
+        max_sse_duration = 900  # 15 minutes maximum lifetime for an active SSE stream
         
         while True:
             # Check for client disconnect
             if await request.is_disconnected():
+                break
+
+            # Enforce max connection lifetime
+            if time.monotonic() - stream_started_at > max_sse_duration:
+                yield "event: timeout\ndata: {\"error\": \"SSE stream reached maximum duration limit.\"}\n\n"
                 break
                 
             # Fetch fresh state

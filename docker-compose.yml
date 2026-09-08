@@ -12,8 +12,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    ports:
-      - "5432:5432"
 
   alembic-migrator:
     build: .
@@ -46,13 +44,25 @@ services:
       retries: 3
 
   searxng:
-    image: searxng/searxng:latest
-    ports:
-      - "8080:8080"
+    image: searxng/searxng:2024.12.9-7ea8ea0
     environment:
-      - SEARXNG_BASE_URL=http://localhost:8080/
+      - SEARXNG_BASE_URL=http://searxng:8080/
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-}
     volumes:
       - ./searxng:/etc/searxng
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - API_INTERNAL_URL=http://api:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+

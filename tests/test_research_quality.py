@@ -14,10 +14,14 @@ Verifies:
 """
 
 import pytest
+import json
 from unittest.mock import MagicMock, patch
 
 from app.agent.evidence import CandidateEvidence, EvidenceExtractor, EvidenceVerifier
 from app.agent.specialized.web_agent import WebResearchAgent
+from app.agent.specialized.reasoning_agent import ReasoningAgent
+from app.tools.web_fetch import WebFetchTool
+from app.tools.web_search import WebSearchTool
 from app.agent.contracts import AgentRequest
 from app.agent.execution_context import AgentExecutionContext
 
@@ -212,6 +216,183 @@ def test_j_institution_verification(verifier: EvidenceVerifier) -> None:
     )
     assert not verifier.verify_candidate(cand_unknown)
     assert cand_unknown.satisfies_institution is False
+
+
+def test_secondary_publisher_cannot_be_institution_or_primary_source(verifier: EvidenceVerifier) -> None:
+    item = {
+        "title": "What is the biggest quantum computing breakthrough in 2026?",
+        "url": "https://bqpsim.com/blog/quantum-breakthroughs",
+        "snippet": "A blog roundup discusses several quantum computing developments.",
+        "date": "2026-04-01",
+    }
+    candidate = EvidenceExtractor.extract_candidate(item)
+    assert candidate.institution == "Unknown Institution"
+    assert candidate.article_date == "2026-04-01"
+    assert not verifier.verify_candidate(candidate)
+
+
+def test_secondary_2026_article_about_2025_work_is_rejected(verifier: EvidenceVerifier) -> None:
+    candidate = CandidateEvidence(
+        title="2026 report on a quantum computing result",
+        institution="University of Example",
+        source_url="https://sciencedaily.com/releases/2026/01/report.html",
+        discovery_claim="The article discusses a quantum processor paper published in 2025.",
+        importance_claim="The paper reports an experimental result.",
+        article_date="2026-01-02",
+        work_date="2025-11-15",
+        evidence=["The underlying paper date is 2025-11-15."],
+        significance_evidence=["The paper reports an experimental result."],
+        primary_source_url="https://doi.org/10/example",
+    )
+    assert not verifier.verify_candidate(candidate)
+    assert candidate.satisfies_year is False
+
+
+def test_candidate_without_supporting_evidence_is_rejected(verifier: EvidenceVerifier) -> None:
+    candidate = CandidateEvidence(
+        title="Quantum processor breakthrough",
+        institution="University of Example",
+        source_url="https://example.edu/news/2026-breakthrough",
+        discovery_claim="A quantum processor was improved.",
+        importance_claim="It matters.",
+        work_date="2026-02-01",
+        primary_source=True,
+    )
+    # A primary candidate with an extracted claim is acceptable evidence; an
+    # explicit empty claim is not silently filled by the verifier.
+    candidate.discovery_claim = ""
+    candidate.evidence = []
+    assert not verifier.verify_candidate(candidate)
+
+
+def test_primary_source_content_can_overrule_secondary_article_date(verifier: EvidenceVerifier) -> None:
+    candidate = CandidateEvidence(
+        title="Quantum error-correction result",
+        institution="University of Example",
+        source_url="https://example.edu/news/2026-announcement",
+        discovery_claim="Quantum computing researchers report a result.",
+        importance_claim="The result improves error correction.",
+        work_date="2026-06-01",
+        article_date="2026-06-02",
+        primary_source=True,
+        evidence=["Quantum computing researchers report a result."],
+        significance_evidence=["The result improves error correction."],
+    )
+    enriched = EvidenceExtractor.enrich_from_source(
+        candidate,
+        "Title: Quantum error-correction result\n\nContent: The paper was published in 2025. Quantum computing researchers report a result.",
+    )
+    assert enriched.work_date == "2025"
+    assert not verifier.verify_candidate(enriched)
+
+
+def test_same_institution_different_discoveries_are_not_collapsed() -> None:
+    agent = WebResearchAgent(gateway=None)
+    first = CandidateEvidence(
+        title="Logical qubit experiment A",
+        institution="University of Example",
+        source_url="https://example.edu/a",
+        discovery_claim="Quantum computing qubit experiment A.",
+        importance_claim="Improves logical qubit control.",
+        work_date="2026",
+        primary_source=True,
+    )
+    second = CandidateEvidence(
+        title="Logical qubit experiment B",
+        institution="University of Example",
+        source_url="https://example.edu/b",
+        discovery_claim="Quantum computing qubit experiment B.",
+        importance_claim="Improves logical qubit readout.",
+        work_date="2026",
+        primary_source=True,
+    )
+    verifier = EvidenceVerifier()
+    assert verifier.verify_candidate(first)
+    assert verifier.verify_candidate(second)
+    assert agent._candidate_key(first) != agent._candidate_key(second)
+
+
+def test_unsupported_significance_summary_is_rejected() -> None:
+    agent = WebResearchAgent(gateway=None)
+    candidate = CandidateEvidence(
+        title="Logical qubit experiment",
+        institution="University of Example",
+        source_url="https://example.edu/a",
+        discovery_claim="Quantum computing researchers demonstrated a logical qubit.",
+        importance_claim="The source reports a logical-qubit demonstration.",
+        work_date="2026",
+        primary_source=True,
+    )
+    assert not agent._summary_supported(
+        "This dramatically transforms all future computing. It proves universal practical quantum advantage.",
+        candidate,
+    )
+
+
+def test_reasoning_agent_preserves_verified_web_artifact() -> None:
+    artifact = (
+        "### Major Scientific Discoveries in Quantum Computing (2026)\n\n"
+        "#### 1. Verified result\n- **Institution:** University of Example\n"
+        "- **Why It Matters:** A reported result. The source supports this result."
+    )
+    text = "Use ONLY the following verified research evidence.\n[Research from step 1]:\n" + artifact
+    assert ReasoningAgent._extract_verified_research_artifact(text) == artifact
+    assert ReasoningAgent._extract_verified_research_artifact(
+        "[Research from step 1]: No verified scientific discoveries meeting all criteria could be confirmed from primary sources."
+    ).startswith("No verified scientific discoveries")
+
+
+def test_end_to_end_research_replans_and_returns_only_verified_candidates() -> None:
+    first = {
+        "title": "IBM demonstrates a quantum computing logical-qubit result",
+        "url": "https://newsroom.ibm.com/2026/logical-qubit",
+        "snippet": "IBM Quantum demonstrated a new quantum computing logical qubit result.",
+        "date": "2026-06-01",
+    }
+    second = {
+        "title": "Google Quantum AI reports a quantum processor result",
+        "url": "https://research.google/2026/processor",
+        "snippet": "Google Quantum AI demonstrated a quantum processor experiment.",
+        "date": "2026-07-01",
+    }
+    third = {
+        "title": "University of Sydney reports quantum error correction research",
+        "url": "https://research.sydney.edu.au/2026/error-correction",
+        "snippet": "University of Sydney researchers demonstrated quantum error correction.",
+        "date": "2026-08-01",
+    }
+
+    def search(query: str) -> str:
+        if "breakthrough press release" in query:
+            return json.dumps([first])
+        if "neutral atom" in query:
+            return json.dumps([second])
+        if "superconducting" in query:
+            return json.dumps([third])
+        return "No results found."
+
+    def fetch(url: str) -> str:
+        return (
+            "Title: Verified research result\n\nContent: Researchers demonstrated a new quantum computing result. "
+            "The experiment improves quantum error correction and supports scalable research."
+        )
+
+    agent = WebResearchAgent(gateway=None)
+    request = AgentRequest(
+        input_text="Find 3 major scientific discoveries made in quantum computing in 2026.",
+        context=AgentExecutionContext(task="research"),
+    )
+    with patch.object(WebSearchTool, "execute", side_effect=search) as search_mock:
+        with patch.object(WebFetchTool, "execute", side_effect=fetch):
+            result = agent.execute(request)
+
+    assert result.success is True
+    assert result.output is not None
+    assert "#### 1." in result.output and "#### 2." in result.output and "#### 3." in result.output
+    assert "University of Sydney" in result.output
+    queried = [call.kwargs["query"] for call in search_mock.call_args_list]
+    assert any("neutral atom" in query for query in queried)
+    assert any("superconducting" in query for query in queried)
 
 
 # ── Test K: WebFetchTool Primary-Source Deep Content Extraction ───────────────

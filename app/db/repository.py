@@ -1,4 +1,4 @@
-﻿"""Repository layer for interacting with the SQL persistence store."""
+"""Repository layer for interacting with the SQL persistence store."""
 
 from __future__ import annotations
 
@@ -137,6 +137,17 @@ class SQLJobRepository:
         res = self.db.execute(stmt)
         self.db.commit()
         return res.rowcount > 0
+
+    def count_active_jobs(self, user_id: str) -> int:
+        """Count pending and running jobs for a specific user."""
+        stmt = (
+            select(func.count(Job.job_id))
+            .where(
+                Job.user_id == user_id,
+                Job.status.in_(["PENDING", "RUNNING"])
+            )
+        )
+        return self.db.execute(stmt).scalar() or 0
 
     def get_queue_stats(
         self, user_id: str, stale_threshold_seconds: int

@@ -1,9 +1,0 @@
-RFC-TEST-9700
-
-The Orion authentication protocol requires rotating access tokens every 24 hours.
-
-Refresh tokens must be invalidated immediately after access-token rotation.
-
-Clients must never store access tokens in URL parameters.
-
-The protocol requires clients to use secure transport for all authentication requests.

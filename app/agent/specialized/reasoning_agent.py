@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from app.agent.contracts import (
     AgentCapabilities,
     AgentIdentity,
@@ -79,6 +81,22 @@ class ReasoningAgent(BaseAgent):
                 # Fall back to LLM for complex/worded math problems
                 pass
 
+        # WebResearchAgent already performs source retrieval, candidate
+        # verification, bounded replanning, and evidence-grounded formatting.
+        # Preserve that verified artifact instead of asking a second LLM to
+        # regenerate facts and potentially introduce unsupported claims.
+        verified_artifact = self._extract_verified_research_artifact(normalized_input)
+        if verified_artifact:
+            state = AgentState(finished=True, final_answer=verified_artifact)
+            return AgentResult(
+                request=request,
+                state=state,
+                output=verified_artifact,
+                success=True,
+                context=request.context,
+                error=None,
+            )
+
         if self._gateway is None:
             raise AgentExecutionError(
                 "ReasoningAgent has no LLM gateway configured.",
@@ -131,3 +149,20 @@ class ReasoningAgent(BaseAgent):
             context=request.context,
             error=error,
         )
+
+    @staticmethod
+    def _extract_verified_research_artifact(text: str) -> str | None:
+        """Return the strongest verified web-research artifact, if present."""
+        matches = re.findall(
+            r"(###\s+Major Scientific Discoveries in [^\n]+\s*\([^\n]+\)[\s\S]*?)(?=\n\[Research from step|\Z)",
+            text,
+            flags=re.IGNORECASE,
+        )
+        if not matches:
+            no_result = re.search(
+                r"No verified scientific discoveries meeting all criteria[^\n]*",
+                text,
+                flags=re.IGNORECASE,
+            )
+            return no_result.group(0).strip() if no_result else None
+        return max(matches, key=lambda value: value.count("#### ")).strip()

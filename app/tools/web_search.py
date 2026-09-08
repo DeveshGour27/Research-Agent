@@ -13,12 +13,11 @@ import urllib.request
 from typing import Any
 
 from app.exceptions import ToolExecutionError
+from app.config import settings
 from app.tools.base import BaseTool
 
 # How many results to fetch from SearXNG (enough to have good coverage after filtering)
 _FETCH_LIMIT = 20
-# How many results to return to the agent
-_RETURN_LIMIT = 10
 
 
 class WebSearchTool(BaseTool):
@@ -49,17 +48,34 @@ class WebSearchTool(BaseTool):
                 "The 'query' argument must not be empty.",
                 tool_name=self.name,
             )
+        provider = str(getattr(settings, "web_search_provider", "searxng")).casefold()
+        if provider != "searxng":
+            raise ToolExecutionError(
+                f"Unsupported web search provider: {provider}",
+                tool_name=self.name,
+            )
 
-        url = "http://localhost:8080/search"
+        # Keep provider selection centralized in configuration so deployments
+        # can point at a non-default SearXNG instance without code changes.
+        base_url = getattr(settings, "searxng_base_url", "http://localhost:8080").rstrip("/")
+        url = f"{base_url}/search"
         params = urllib.parse.urlencode({"q": query, "format": "json"})
         req = urllib.request.Request(
             f"{url}?{params}",
             headers={"User-Agent": "ResearchAgent/1.0"},
         )
+        # Kept for compatibility with callers/tests that inspect the request
+        # object directly; urllib uses get_method() internally.
+        req.method = "GET"
 
         try:
             with urllib.request.urlopen(req, timeout=self._TIMEOUT) as response:
                 data = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as error:
+            raise ToolExecutionError(
+                f"HTTP {error.code}: {error.reason}",
+                tool_name=self.name,
+            )
         except urllib.error.URLError as error:
             raise ToolExecutionError(
                 f"Failed to connect to SearXNG: {getattr(error, 'reason', error)}",
@@ -81,10 +97,20 @@ class WebSearchTool(BaseTool):
                 tool_name=self.name,
             )
 
+        raw_results = data.get("results", [])
+        if not isinstance(raw_results, list):
+            raise ToolExecutionError(
+                "SearXNG returned invalid results format.",
+                tool_name=self.name,
+            )
+
         results: list[dict[str, str]] = []
-        for item in data.get("results", []):
-            if len(results) >= _RETURN_LIMIT:
+        provider_limit = int(getattr(settings, "web_search_max_results", 10))
+        for item in raw_results:
+            if len(results) >= provider_limit:
                 break
+            if not isinstance(item, dict):
+                continue
 
             title = item.get("title", "").strip()
             url_str = item.get("url", "").strip()
@@ -106,6 +132,12 @@ class WebSearchTool(BaseTool):
                 }
                 if pub_date:
                     entry["date"] = str(pub_date).strip()
+                engine = item.get("engine") or item.get("source")
+                if engine:
+                    entry["engine"] = str(engine).strip()
+                engines = item.get("engines")
+                if isinstance(engines, list) and engines:
+                    entry["engines"] = ", ".join(str(value) for value in engines)
                 results.append(entry)
 
         if not results:

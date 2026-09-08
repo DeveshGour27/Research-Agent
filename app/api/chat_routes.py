@@ -36,8 +36,11 @@ class MessageMetadataResponse(BaseModel):
 class ChatDetailResponse(ChatMetadataResponse):
     messages: List[MessageMetadataResponse]
 
+from app.constants import MAX_QUERY_LENGTH
+from app.config import settings
+
 class SendMessageRequest(BaseModel):
-    content: str = Field(..., min_length=1)
+    content: str = Field(..., min_length=1, max_length=MAX_QUERY_LENGTH)
 
 class SendMessageResponse(BaseModel):
     message_id: str
@@ -128,8 +131,25 @@ def send_message(
     content = body.content.strip()
     if not content:
         raise HTTPException(status_code=422, detail="Message content cannot be empty or whitespace.")
-    
+
+    rate_limiter = getattr(request.app.state, "rate_limiter", None)
+    if rate_limiter:
+        allowed, retry_after = rate_limiter.is_allowed(f"user_chat:{user.user_id}")
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Rate limit exceeded. Try again in {retry_after} seconds.",
+                headers={"Retry-After": str(retry_after)}
+            )
+
     repo = SQLJobRepository(db)
+    active_jobs = repo.count_active_jobs(user_id=user.user_id)
+    if active_jobs >= settings.max_concurrent_jobs_per_user:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Concurrent job limit exceeded ({settings.max_concurrent_jobs_per_user}). Please wait for active jobs to finish."
+        )
+
     chat = repo.get_conversation(chat_id=chat_id, user_id=user.user_id)
     if not chat:
         return _error_response("CHAT_NOT_FOUND", "Chat not found.", status.HTTP_404_NOT_FOUND)

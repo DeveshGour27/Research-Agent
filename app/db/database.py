@@ -47,7 +47,7 @@ def get_db() -> Generator[Session, None, None]:
 
 # Ensure tables are created for local development/testing without Alembic
 # In production, Alembic migrations must be run before startup
-from app.db.models import User, ApiKey, Job, JobStep
+from app.db.models import User, ApiKey, Job, JobStep, HITLRequest, Conversation, Message, OAuthIdentity, UserSession
 from app.config import Environment
 
 if settings.environment != Environment.PRODUCTION:

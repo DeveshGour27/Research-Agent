@@ -22,14 +22,33 @@ class FakeProvider(LLMProvider):
 
 
 def test_chat_appends_user_input_to_history_sent_to_provider() -> None:
-    """The service sends existing history and the newly supplied message."""
+    """The service prepends system prompt if absent and appends the newly supplied message."""
     provider = FakeProvider()
     service = ChatService(provider)
 
     result = service.chat([{"role": "user", "content": "Earlier"}], "Current")
 
     assert result.content == "Hello"
-    assert provider.messages == [{"role": "user", "content": "Earlier"}, {"role": "user", "content": "Current"}]
+    assert len(provider.messages) == 3
+    assert provider.messages[0]["role"] == "system"
+    assert provider.messages[1:] == [{"role": "user", "content": "Earlier"}, {"role": "user", "content": "Current"}]
+
+
+def test_chat_does_not_duplicate_existing_system_prompt() -> None:
+    """The service preserves an already-present system prompt and does not insert another."""
+    provider = FakeProvider()
+    service = ChatService(provider)
+    custom_system = {"role": "system", "content": "Custom system prompt"}
+
+    result = service.chat([custom_system, {"role": "user", "content": "Earlier"}], "Current")
+
+    assert result.content == "Hello"
+    assert len(provider.messages) == 3
+    assert provider.messages == [
+        custom_system,
+        {"role": "user", "content": "Earlier"},
+        {"role": "user", "content": "Current"},
+    ]
 
 
 @pytest.mark.parametrize("user_input", ["", "   "])

@@ -94,6 +94,7 @@ class AgentExecutionContext:
     run_id: str = field(default_factory=lambda: str(uuid4()))
     span_id: str = field(default_factory=lambda: str(uuid4()))
     parent_span_id: str | None = None
+    deadline_at: float | None = None
 
     def create_child_span(self, *, task: str) -> "AgentExecutionContext":
         """Create a child execution context that inherits the trace lineage.
@@ -104,7 +105,7 @@ class AgentExecutionContext:
         - ``parent_span_id`` set to this context's ``span_id``.
         - Fresh mutable collections (no shared state).
         - Its own ``execution_id`` (new context instance).
-        - Inherited scalar fields: ``user_id``, ``chat_id``, ``correlation_id``.
+        - Inherited scalar fields: ``user_id``, ``chat_id``, ``correlation_id``, ``deadline_at``.
 
         The child starts in CREATED status. Cancellation and timeout state
         are NOT copied — the existing architecture propagates those signals
@@ -118,6 +119,7 @@ class AgentExecutionContext:
             trace_id=self.trace_id,
             run_id=self.run_id,
             parent_span_id=self.span_id,
+            deadline_at=self.deadline_at,
         )
 
     def mark_running(self) -> None:
@@ -155,6 +157,18 @@ class AgentExecutionContext:
     @property
     def is_timed_out(self) -> bool:
         return self.status == ExecutionStatus.TIMED_OUT
+
+    @property
+    def is_expired(self) -> bool:
+        """Check whether context is cancelled, timed out, or passed deadline."""
+        if self.status in (ExecutionStatus.CANCELLED, ExecutionStatus.TIMED_OUT):
+            return True
+        if self.deadline_at is not None:
+            import time
+            if time.monotonic() >= self.deadline_at:
+                self.mark_timed_out()
+                return True
+        return False
 
     def publish_artifact(self, artifact: "Artifact") -> None:
         """Publish an immutable structured Artifact to the context."""

@@ -1,0 +1,24 @@
+# Developer override compose file for local development & debugging.
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: research_agent
+    ports:
+      - "5432:5432"
+
+  alembic-migrator:
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:postgres_password@postgres:5432/research_agent
+
+  api:
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:postgres_password@postgres:5432/research_agent
+
+  searxng:
+    ports:
+      - "8080:8080"

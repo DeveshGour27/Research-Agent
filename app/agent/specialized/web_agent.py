@@ -42,9 +42,9 @@ class WebResearchAgent(BaseAgent):
             retrieval=False,
             task_types=frozenset({"web_search"}),
         )
-        self._tool_registry = ToolRegistry()
+        self._tool_registry = ToolRegistry(include_mcp=False)
         self._tool_registry.register(WebSearchTool())
-        self._tool_registry.register(WebFetchTool())
+        self._fetch_tool = WebFetchTool()
         self._gateway = gateway
         self._query_cache: dict[str, list[dict[str, Any]]] = {}
 
@@ -66,16 +66,78 @@ class WebResearchAgent(BaseAgent):
 
         tool = self._tool_registry.get("web_search")
 
+        is_discovery_task = bool(
+            re.search(r"\b(?:discoveries|discovery|breakthroughs?)\b", normalized_input, re.I)
+        )
+
+        if not is_discovery_task:
+            try:
+                raw_output = tool.execute(query=normalized_input)
+                if self._gateway and raw_output and raw_output != "No results found.":
+                    prompt_instruction = (
+                        "You are the AI Research Assistant. Given the user's query and the following raw web search results, "
+                        "synthesize a natural, conversational, and informative answer. Cite your sources where appropriate. "
+                        "Always format your responses using clean, standard Markdown. Avoid returning raw JSON."
+                    )
+                    llm_request = ModelRequest(
+                        messages=[
+                            {"role": "system", "content": prompt_instruction},
+                            {"role": "user", "content": f"Query: {normalized_input}\n\nSearch Results: {raw_output}"},
+                        ],
+                        task_type=TaskType.GENERAL,
+                    )
+                    response = self._gateway.generate(llm_request)
+                    output = response.content or raw_output
+                else:
+                    output = raw_output
+
+                state = AgentState(finished=True, final_answer=output)
+                return AgentResult(
+                    request=request,
+                    state=state,
+                    output=output,
+                    success=True,
+                    context=request.context,
+                )
+            except ToolExecutionError as e:
+                state = AgentState(finished=False, final_answer=None)
+                return AgentResult(
+                    request=request,
+                    state=state,
+                    output=None,
+                    success=False,
+                    context=request.context,
+                    error=AgentExecutionError(
+                        "Web search tool execution failed.",
+                        request=request,
+                        details={"error_message": str(e)},
+                    ),
+                )
+            except Exception as e:
+                state = AgentState(finished=False, final_answer=None)
+                return AgentResult(
+                    request=request,
+                    state=state,
+                    output=None,
+                    success=False,
+                    context=request.context,
+                    error=AgentExecutionError(
+                        "Unexpected error during web research.",
+                        request=request,
+                        details={"error_type": type(e).__name__, "message": str(e)},
+                    ),
+                )
+
         try:
             # ── 1. Parse Query Constraints ──────────────────────────────────
             year_constraint = self._extract_year(normalized_input) or "2026"
             count_constraint = self._extract_count(normalized_input) or 3
-            domain_constraint = "quantum computing"
+            domain_constraint = self._extract_domain(normalized_input)
 
             verifier = EvidenceVerifier(target_year=year_constraint, target_domain=domain_constraint)
 
             # ── 2. Determine Multi-Strategy Search Queries ───────────────────
-            search_queries = self._generate_search_strategies(normalized_input, year_constraint)
+            search_queries = self._generate_search_strategies(normalized_input, year_constraint, domain_constraint)
             logger.info(
                 "WebResearchAgent executing multi-strategy search",
                 extra={"query_count": len(search_queries), "strategies": search_queries},
@@ -91,13 +153,15 @@ class WebResearchAgent(BaseAgent):
                     items = cached
                 else:
                     try:
-                        time.sleep(0.3)  # Gentle pacing to prevent engine suspension
+                        time.sleep(0.05)  # Gentle pacing
                         raw_str = tool.execute(query=q)
                         if raw_str and raw_str != "No results found.":
                             items = json.loads(raw_str)
                         else:
                             items = []
                         self._query_cache[q] = items
+                    except ToolExecutionError:
+                        raise
                     except Exception as err:
                         logger.warning("Search query execution failed", extra={"query": q, "error": str(err)})
                         items = []
@@ -110,14 +174,14 @@ class WebResearchAgent(BaseAgent):
 
             # ── 4. Candidate Extraction and Verification ─────────────────────
             verified_candidates: list[CandidateEvidence] = []
-            seen_institutions: set[str] = set()
+            seen_candidates: set[str] = set()
 
             for item in raw_items:
                 candidate = EvidenceExtractor.extract_candidate(item)
                 if verifier.verify_candidate(candidate):
-                    inst_key = candidate.institution.lower().strip()
-                    if inst_key not in seen_institutions:
-                        seen_institutions.add(inst_key)
+                    cand_key = self._candidate_key(candidate)
+                    if cand_key not in seen_candidates:
+                        seen_candidates.add(cand_key)
                         verified_candidates.append(candidate)
 
             # Sort by evidence quality (primary sources and verified details first)
@@ -129,11 +193,9 @@ class WebResearchAgent(BaseAgent):
                     "Verified candidates below target count, executing targeted follow-up research",
                     extra={"verified": len(verified_candidates), "target": count_constraint},
                 )
-                follow_up_queries = [
-                    f"{year_constraint} quantum computing Nature Science paper",
-                    f"{year_constraint} quantum processor qubit increase press release",
-                    f"{year_constraint} fault tolerant logical qubit demonstration",
-                ]
+                follow_up_queries = self._generate_follow_up_strategies(
+                    normalized_input, year_constraint, domain_constraint
+                )
                 for fq in follow_up_queries:
                     if len(verified_candidates) >= count_constraint:
                         break
@@ -151,15 +213,15 @@ class WebResearchAgent(BaseAgent):
                                     seen_urls.add(url)
                                     cand = EvidenceExtractor.extract_candidate(item)
                                     if verifier.verify_candidate(cand):
-                                        inst_key = cand.institution.lower().strip()
-                                        if inst_key not in seen_institutions:
-                                            seen_institutions.add(inst_key)
+                                        cand_key = self._candidate_key(cand)
+                                        if cand_key not in seen_candidates:
+                                            seen_candidates.add(cand_key)
                                             verified_candidates.append(cand)
                     except Exception as err:
                         logger.warning("Follow-up search failed", extra={"query": fq, "error": str(err)})
 
             # ── 5b. Deep Web Fetch for Primary Source Verification ───────────
-            fetch_tool = self._tool_registry.get("web_fetch")
+            fetch_tool = self._tool_registry._tools.get("web_fetch") or self._fetch_tool
             for cand in verified_candidates[:count_constraint]:
                 if cand.primary_source and cand.source_url.startswith("http"):
                     try:
@@ -214,14 +276,90 @@ class WebResearchAgent(BaseAgent):
             error=error,
         )
 
-    def _generate_search_strategies(self, query: str, year: str) -> list[str]:
+    def _generate_search_strategies(self, query: str, year: str, domain: str = "quantum computing") -> list[str]:
         """Generate focused, high-precision search query angles."""
+        if domain == "quantum computing":
+            return [
+                f"{year} quantum computing breakthrough press release",
+                f"{year} quantum error correction discovery research",
+                f"{year} quantum advantage demonstration university",
+                f"{year} quantum processor hardware scaling announcement",
+            ]
         return [
-            f"{year} quantum computing breakthrough press release",
-            f"{year} quantum error correction discovery research",
-            f"{year} quantum advantage demonstration university",
-            f"{year} quantum processor hardware scaling announcement",
+            f"{year} {domain} breakthrough press release",
+            f"{year} {domain} discovery research university",
+            f"{year} {domain} experimental demonstration",
+            f"{year} {domain} major scientific breakthrough",
         ]
+
+    def _generate_follow_up_strategies(self, query: str, year: str, domain: str = "quantum computing") -> list[str]:
+        """Generate targeted follow-up queries when candidate count is below target."""
+        if domain == "quantum computing":
+            return [
+                f"{year} neutral atom quantum processor result",
+                f"{year} superconducting qubit logical qubit paper",
+                f"{year} trapped ion quantum computer demonstration",
+                f"{year} quantum error correction Nature Science paper",
+                f"{year} quantum processor hardware scaling announcement",
+            ]
+        return [
+            f"{year} {domain} research demonstration university",
+            f"{year} {domain} Nature Science publication breakthrough",
+            f"{year} {domain} lab experimental results paper",
+            f"{year} {domain} breakthrough announcement",
+        ]
+
+    def _candidate_key(self, candidate: CandidateEvidence) -> str:
+        """Unique key for deduplicating candidates while preserving distinct discoveries from same institution."""
+        inst = (candidate.institution or "").strip().lower()
+        title = (candidate.title or "").strip().lower()
+        return f"{inst}:{title}"
+
+    def _summary_supported(self, summary: str, candidate: CandidateEvidence) -> bool:
+        """Check whether a generated significance summary is grounded in the candidate evidence."""
+        if not summary or not summary.strip():
+            return False
+
+        summary_lower = summary.lower()
+        unsupported_markers = [
+            "dramatically transforms",
+            "universal practical quantum advantage",
+            "transforms all future",
+            "proves universal",
+            "revolutionizes all",
+            "cures all",
+            "infinite scalability",
+            "solves all problems",
+        ]
+        for marker in unsupported_markers:
+            if marker in summary_lower:
+                return False
+
+        corpus = " ".join([
+            candidate.title or "",
+            candidate.discovery_claim or "",
+            candidate.importance_claim or "",
+            " ".join(candidate.evidence) if candidate.evidence else "",
+            " ".join(candidate.significance_evidence) if candidate.significance_evidence else "",
+        ]).lower()
+
+        stop_words = {
+            "this", "that", "these", "those", "is", "are", "was", "were", "be", "been", "being",
+            "have", "has", "had", "do", "does", "did", "and", "or", "but", "if", "because",
+            "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between",
+            "into", "through", "during", "before", "after", "above", "below", "to", "from",
+            "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then",
+            "once", "here", "there", "when", "where", "why", "how", "all", "any", "both",
+            "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only",
+            "own", "same", "so", "than", "too", "very", "can", "will", "just", "should", "now",
+            "it", "its", "the", "a", "an", "reports", "source", "result", "demonstration"
+        }
+        words = [w for w in re.findall(r"\b[a-z]{4,}\b", summary_lower) if w not in stop_words]
+        if not words:
+            return True
+
+        overlap = sum(1 for w in words if w in corpus)
+        return (overlap / len(words)) >= 0.4
 
     def _synthesize_response(
         self,
@@ -231,15 +369,16 @@ class WebResearchAgent(BaseAgent):
         verifier: EvidenceVerifier,
     ) -> str:
         """Synthesize verified discoveries into clean Markdown without hallucinating."""
+        domain_title = verifier.target_domain.title()
         if not candidates:
             return (
-                f"No verified scientific discoveries meeting all criteria (quantum computing domain, "
+                f"No verified scientific discoveries meeting all criteria ({verifier.target_domain} domain, "
                 f"{target_year} publication, attributed institution, and empirical demonstration) could be "
                 f"confirmed from primary sources."
             )
 
         lines: list[str] = [
-            f"### Major Scientific Discoveries in Quantum Computing ({target_year})\n"
+            f"### Major Scientific Discoveries in {domain_title} ({target_year})\n"
         ]
 
         for i, c in enumerate(candidates, 1):
@@ -267,7 +406,7 @@ class WebResearchAgent(BaseAgent):
         if self._gateway:
             try:
                 prompt = (
-                    "Write a concise summary explaining why this quantum computing discovery matters.\n\n"
+                    "Write a concise summary explaining why this scientific discovery matters.\n\n"
                     "STRICT REQUIREMENTS:\n"
                     "1. Your summary MUST consist of EXACTLY TWO SENTENCES. No more, no less.\n"
                     "2. Base your explanation strictly on the facts in the snippet. Do NOT invent details.\n"
@@ -283,13 +422,14 @@ class WebResearchAgent(BaseAgent):
                 )
                 resp = self._gateway.generate(req)
                 content = (resp.content or "").strip()
-                if content:
+                if content and self._summary_supported(content, candidate):
                     return verifier.enforce_two_sentences(content)
             except Exception as e:
                 logger.warning("LLM 2-sentence generation failed, using rule-based", extra={"error": str(e)})
 
         # Fallback to rule-based two-sentence enforcement
-        base_claim = candidate.discovery_claim.replace("...", "").strip()
+        base_claim = candidate.importance_claim or candidate.discovery_claim
+        base_claim = base_claim.replace("...", "").strip()
         return verifier.enforce_two_sentences(base_claim)
 
     @staticmethod
@@ -311,3 +451,30 @@ class WebResearchAgent(BaseAgent):
             if re.search(rf"\b{word}\s+(?:major|scientific|breakthrough|discoveries)", text, re.I):
                 return val
         return None
+
+    @staticmethod
+    def _extract_domain(text: str) -> str:
+        """Extract the research domain from the input text, defaulting to quantum computing if detected."""
+        text_lower = text.lower()
+        if "quantum" in text_lower or "qubit" in text_lower:
+            return "quantum computing"
+
+        domains = [
+            "artificial intelligence", "machine learning", "robotics",
+            "crispr", "gene editing", "genetics", "biotechnology",
+            "materials science", "superconductivity", "nanotechnology",
+            "astrophysics", "astronomy", "cosmology", "fusion energy",
+            "renewable energy", "climate science", "neuroscience",
+        ]
+        for d in domains:
+            if d in text_lower:
+                return d
+
+        cleaned = re.sub(
+            r"\b(find|what\s+are|the|major|scientific|discoveries|discovery|breakthroughs|breakthrough|in|of|for|recent|latest|\d{4})\b",
+            " ",
+            text,
+            flags=re.I,
+        ).strip()
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        return cleaned or "scientific research"

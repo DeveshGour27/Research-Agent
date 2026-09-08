@@ -14,7 +14,7 @@ def test_mcp_real_stdio_integration():
         enabled=True
     )
     
-    policy = MCPPolicy()
+    policy = MCPPolicy(allowed_servers=["dummy"])
     registry = MCPRegistry(policy=policy, transport_cls=StdioTransport)
     
     registry.register_server("dummy", config)

@@ -34,16 +34,15 @@ class WebFetchTool(BaseTool):
     }
 
     _TIMEOUT = 10
-    _MAX_CHARS = 4000
+    _MAX_CHARS = 12000
 
     def execute(self, **kwargs: object) -> str:
         url = str(kwargs.get("url", "")).strip()
         if not url:
             raise ToolExecutionError("The 'url' argument must not be empty.", tool_name=self.name)
 
-        parsed = urllib.parse.urlparse(url)
-        if parsed.scheme not in ("http", "https"):
-            raise ToolExecutionError(f"Invalid URL scheme: '{parsed.scheme}'. Must be http or https.", tool_name=self.name)
+        from app.tools.ssrf import validate_safe_url, SafeRedirectHandler
+        validate_safe_url(url)
 
         req = urllib.request.Request(
             url,
@@ -54,11 +53,13 @@ class WebFetchTool(BaseTool):
         )
 
         try:
+            opener = urllib.request.build_opener(SafeRedirectHandler(max_redirects=3))
+            urllib.request.install_opener(opener)
             with urllib.request.urlopen(req, timeout=self._TIMEOUT) as resp:
                 content_type = resp.headers.get("Content-Type", "")
                 if "text/html" not in content_type and "text/plain" not in content_type:
                     return f"Non-HTML content type: {content_type}"
-                html_bytes = resp.read(250_000)  # Read at most 250KB
+                html_bytes = resp.read(500_000)  # Read at most 500KB
                 html_text = html_bytes.decode("utf-8", errors="replace")
         except urllib.error.HTTPError as error:
             return f"HTTP error {error.code}: {error.reason}"
@@ -79,6 +80,17 @@ class WebFetchTool(BaseTool):
 
             # Extract title
             title = soup.title.string.strip() if soup.title and soup.title.string else ""
+            date_candidates: list[str] = []
+            for selector, attribute in [
+                ("meta[property='article:published_time']", "content"),
+                ("meta[property='og:published_time']", "content"),
+                ("meta[name='date']", "content"),
+                ("meta[name='publication_date']", "content"),
+                ("time[datetime]", "datetime"),
+            ]:
+                element = soup.select_one(selector)
+                if element and element.get(attribute):
+                    date_candidates.append(str(element.get(attribute)).strip())
 
             # Extract paragraphs
             paragraphs = [p.get_text(separator=" ", strip=True) for p in soup.find_all(["p", "h1", "h2", "h3", "article"])]
@@ -92,7 +104,8 @@ class WebFetchTool(BaseTool):
                 combined = "\n\n".join(text_blocks)
                 combined = re.sub(r"\s+", " ", combined)[:self._MAX_CHARS]
 
-            result = f"Title: {title}\n\nContent:\n{combined.strip()}"
+            date_line = f"\n\nMetadata date: {date_candidates[0]}" if date_candidates else ""
+            result = f"Title: {title}{date_line}\n\nContent:\n{combined.strip()}"
             return result
         except Exception as err:
             return f"Error extracting page text: {err}"

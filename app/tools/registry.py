@@ -25,7 +25,7 @@ class ToolRegistry:
         result = registry.execute(tool_call)
     """
 
-    def __init__(self, include_mcp: bool = True) -> None:
+    def __init__(self, include_mcp: bool = False) -> None:
         self._tools: dict[str, BaseTool] = {}
         
         if include_mcp:

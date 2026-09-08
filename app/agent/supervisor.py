@@ -424,12 +424,8 @@ class Supervisor(BaseAgent):
         if len(step_outputs) == 1:
             return step_outputs[0]
 
-        # Multiple steps: return the last step's output as the primary answer.
-        # The last step is typically the synthesis/reasoning step that already
-        # has access to earlier steps' outputs in its input.
-        # If the last step looks like a good synthesis, return it alone.
-        last_output = step_outputs[-1]
-        return last_output
+        # Multiple steps: join all step outputs so all evidence and results are preserved
+        return "\n\n".join(step_outputs)
 
     def _execute_legacy(
         self,

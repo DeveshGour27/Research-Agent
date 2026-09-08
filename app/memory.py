@@ -1,13 +1,14 @@
-﻿"""Persistent user-scoped memory and chat history storage."""
+"""Persistent user-scoped memory and chat history storage."""
 
 from __future__ import annotations
 
 import json
 import re
+import threading
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Literal
 from uuid import uuid4
@@ -49,6 +50,40 @@ class Memory:
     user_id: str
     content: str
     created_at: str
+    expires_at: str | None = None
+
+
+class SensitivityFilter:
+    """Detects and redacts sensitive credentials, secrets, and private keys."""
+
+    _SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+        ("private_key", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----", re.IGNORECASE)),
+        ("openai_api_key", re.compile(r"\bsk-[a-zA-Z0-9]{20,}\b")),
+        ("github_token", re.compile(r"\bgh[pousr]_[a-zA-Z0-9]{20,}\b")),
+        ("bearer_token", re.compile(r"\bBearer\s+[a-zA-Z0-9_\-\.]{20,}\b", re.IGNORECASE)),
+        ("generic_secret", re.compile(r"(?:api[_-]?key|auth[_-]?token|secret|password|passwd|pwd)\s*[:=]\s*['\"]?([a-zA-Z0-9_\-\.]{8,})['\"]?", re.IGNORECASE)),
+        ("credit_card", re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")),
+    )
+
+    @classmethod
+    def contains_sensitive_data(cls, text: str) -> bool:
+        """Return True if any secret or credential pattern is found."""
+        return any(pattern.search(text) is not None for _, pattern in cls._SECRET_PATTERNS)
+
+    @classmethod
+    def sanitize(cls, text: str) -> str:
+        """Redact detected credentials and secrets with placeholder markers."""
+        sanitized = text
+        for name, pattern in cls._SECRET_PATTERNS:
+            if name == "generic_secret":
+                def _redact_generic(m: re.Match) -> str:
+                    prefix = m.group(0)[:m.start(1) - m.start(0)]
+                    suffix = m.group(0)[m.end(1) - m.start(0):]
+                    return f"{prefix}[REDACTED_SECRET]{suffix}"
+                sanitized = pattern.sub(_redact_generic, sanitized)
+            else:
+                sanitized = pattern.sub(f"[REDACTED_{name.upper()}]", sanitized)
+        return sanitized
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +179,18 @@ class MemoryStore(ABC):
         top_k: int,
     ) -> list[Memory]:
         """Return top-k user memories ranked by lexical relevance to ``query``."""
+
+    @abstractmethod
+    def delete_memory(self, user_id: str, memory_id: str) -> bool:
+        """Delete one specific memory owned by user_id."""
+
+    @abstractmethod
+    def delete_user_memories(self, user_id: str) -> int:
+        """Delete all memories for user_id (GDPR right-to-be-forgotten)."""
+
+    @abstractmethod
+    def purge_expired_memories(self) -> int:
+        """Purge all expired memories across all users."""
 
 
 class MemoryExtractor:
@@ -390,6 +437,7 @@ class JsonFileMemoryStore(MemoryStore):
     """
 
     def __init__(self, storage_path: Path | None = None) -> None:
+        self._lock = threading.RLock()
         self._storage_path = storage_path or (MEMORY_DIR / "memory_store.json")
         self._storage_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -417,52 +465,54 @@ class JsonFileMemoryStore(MemoryStore):
         return set(re.findall(r"[a-z0-9]+", text.casefold()))
 
     def _read_data(self) -> dict[str, Any]:
-        try:
-            with self._storage_path.open("r", encoding="utf-8") as handle:
-                payload = json.load(handle)
-        except FileNotFoundError as error:
-            raise MemoryReadError(
-                "Memory store file is missing.",
-                details={"path": str(self._storage_path)},
-            ) from error
-        except json.JSONDecodeError as error:
-            raise MemoryReadError(
-                "Memory store file is corrupted.",
-                details={"path": str(self._storage_path)},
-            ) from error
-        except OSError as error:
-            raise MemoryReadError(
-                "Unable to read memory store file.",
-                details={
-                    "path": str(self._storage_path),
-                    "error": str(error),
-                },
-            ) from error
+        with self._lock:
+            try:
+                with self._storage_path.open("r", encoding="utf-8") as handle:
+                    payload = json.load(handle)
+            except FileNotFoundError as error:
+                raise MemoryReadError(
+                    "Memory store file is missing.",
+                    details={"path": str(self._storage_path)},
+                ) from error
+            except json.JSONDecodeError as error:
+                raise MemoryReadError(
+                    "Memory store file is corrupted.",
+                    details={"path": str(self._storage_path)},
+                ) from error
+            except OSError as error:
+                raise MemoryReadError(
+                    "Unable to read memory store file.",
+                    details={
+                        "path": str(self._storage_path),
+                        "error": str(error),
+                    },
+                ) from error
 
-        if not isinstance(payload, dict):
-            raise MemoryReadError(
-                "Memory store format is invalid.",
-                details={"path": str(self._storage_path)},
-            )
+            if not isinstance(payload, dict):
+                raise MemoryReadError(
+                    "Memory store format is invalid.",
+                    details={"path": str(self._storage_path)},
+                )
 
-        return payload
+            return payload
 
     def _write_data(self, payload: dict[str, Any]) -> None:
-        temp_path = self._storage_path.with_suffix(".tmp")
+        with self._lock:
+            temp_path = self._storage_path.with_suffix(".tmp")
 
-        try:
-            with temp_path.open("w", encoding="utf-8") as handle:
-                json.dump(payload, handle, ensure_ascii=True, indent=2)
+            try:
+                with temp_path.open("w", encoding="utf-8") as handle:
+                    json.dump(payload, handle, ensure_ascii=True, indent=2)
 
-            temp_path.replace(self._storage_path)
-        except OSError as error:
-            raise MemoryWriteError(
-                "Unable to write memory store file.",
-                details={
-                    "path": str(self._storage_path),
-                    "error": str(error),
-                },
-            ) from error
+                temp_path.replace(self._storage_path)
+            except OSError as error:
+                raise MemoryWriteError(
+                    "Unable to write memory store file.",
+                    details={
+                        "path": str(self._storage_path),
+                        "error": str(error),
+                    },
+                ) from error
 
     def _ensure_user_exists(
         self,
@@ -680,39 +730,49 @@ class JsonFileMemoryStore(MemoryStore):
         self,
         user_id: str,
         content: str,
+        ttl_days: int | None = None,
     ) -> Memory:
         normalized_content = content.strip()
 
         if not normalized_content:
             raise MemoryWriteError("Memory content cannot be blank.")
 
-        data = self._read_data()
-        self._ensure_user_exists(data, user_id)
+        sanitized_content = SensitivityFilter.sanitize(normalized_content)
 
-        memories_by_user = data.setdefault("memories", {}).setdefault(
-            user_id,
-            [],
-        )
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
 
-        memory = Memory(
-            memory_id=str(uuid4()),
-            user_id=user_id,
-            content=normalized_content,
-            created_at=_utc_now_iso(),
-        )
+            memories_by_user = data.setdefault("memories", {}).setdefault(
+                user_id,
+                [],
+            )
 
-        memories_by_user.append(
-            {
-                "memory_id": memory.memory_id,
-                "user_id": memory.user_id,
-                "content": memory.content,
-                "created_at": memory.created_at,
-            }
-        )
+            expires_at = None
+            if ttl_days is not None and ttl_days > 0:
+                expires_at = (datetime.now(timezone.utc) + timedelta(days=ttl_days)).isoformat()
 
-        self._write_data(data)
+            memory = Memory(
+                memory_id=str(uuid4()),
+                user_id=user_id,
+                content=sanitized_content,
+                created_at=_utc_now_iso(),
+                expires_at=expires_at,
+            )
 
-        return memory
+            memories_by_user.append(
+                {
+                    "memory_id": memory.memory_id,
+                    "user_id": memory.user_id,
+                    "content": memory.content,
+                    "created_at": memory.created_at,
+                    "expires_at": memory.expires_at,
+                }
+            )
+
+            self._write_data(data)
+
+            return memory
 
     def update_memory(
         self,
@@ -735,52 +795,57 @@ class JsonFileMemoryStore(MemoryStore):
         if not normalized_memory_id:
             raise MemoryWriteError("Memory ID cannot be blank.")
 
-        data = self._read_data()
-        self._ensure_user_exists(data, user_id)
+        sanitized_content = SensitivityFilter.sanitize(normalized_content)
 
-        memories_by_user = data.setdefault("memories", {}).setdefault(
-            user_id,
-            [],
-        )
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
 
-        for record in memories_by_user:
-            if record.get("memory_id") != normalized_memory_id:
-                continue
-
-            record_user_id = record.get("user_id")
-
-            if record_user_id != user_id:
-                raise MemoryReadError(
-                    "Memory does not belong to the requested user.",
-                    details={
-                        "memory_id": normalized_memory_id,
-                        "user_id": user_id,
-                    },
-                )
-
-            record["content"] = normalized_content
-
-            self._write_data(data)
-
-            return Memory(
-                memory_id=str(record["memory_id"]),
-                user_id=str(record["user_id"]),
-                content=str(record["content"]),
-                created_at=str(record["created_at"]),
+            memories_by_user = data.setdefault("memories", {}).setdefault(
+                user_id,
+                [],
             )
 
-        raise MemoryReadError(
-            f"Memory '{normalized_memory_id}' does not exist.",
-            details={
-                "memory_id": normalized_memory_id,
-                "user_id": user_id,
-            },
-        )
+            for record in memories_by_user:
+                if record.get("memory_id") != normalized_memory_id:
+                    continue
+
+                record_user_id = record.get("user_id")
+
+                if record_user_id != user_id:
+                    raise MemoryReadError(
+                        "Memory does not belong to the requested user.",
+                        details={
+                            "memory_id": normalized_memory_id,
+                            "user_id": user_id,
+                        },
+                    )
+
+                record["content"] = sanitized_content
+
+                self._write_data(data)
+
+                return Memory(
+                    memory_id=str(record["memory_id"]),
+                    user_id=str(record["user_id"]),
+                    content=str(record["content"]),
+                    created_at=str(record["created_at"]),
+                    expires_at=record.get("expires_at"),
+                )
+
+            raise MemoryReadError(
+                f"Memory '{normalized_memory_id}' does not exist.",
+                details={
+                    "memory_id": normalized_memory_id,
+                    "user_id": user_id,
+                },
+            )
 
     def upsert_memory(
         self,
         user_id: str,
         content: str,
+        ttl_days: int | None = None,
     ) -> Memory:
         """Create or update a related long-term memory.
 
@@ -794,52 +859,62 @@ class JsonFileMemoryStore(MemoryStore):
         if not normalized_content:
             raise MemoryWriteError("Memory content cannot be blank.")
 
-        data = self._read_data()
-        self._ensure_user_exists(data, user_id)
+        sanitized_content = SensitivityFilter.sanitize(normalized_content)
 
-        memories_by_user = data.setdefault("memories", {}).setdefault(
-            user_id,
-            [],
-        )
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
 
-        related_index = self._find_related_memory_index(
-            memories_by_user,
-            normalized_content,
-        )
-
-        if related_index is None:
-            memory = Memory(
-                memory_id=str(uuid4()),
-                user_id=user_id,
-                content=normalized_content,
-                created_at=_utc_now_iso(),
+            memories_by_user = data.setdefault("memories", {}).setdefault(
+                user_id,
+                [],
             )
 
-            memories_by_user.append(
-                {
-                    "memory_id": memory.memory_id,
-                    "user_id": memory.user_id,
-                    "content": memory.content,
-                    "created_at": memory.created_at,
-                }
+            related_index = self._find_related_memory_index(
+                memories_by_user,
+                sanitized_content,
             )
+
+            if related_index is None:
+                expires_at = None
+                if ttl_days is not None and ttl_days > 0:
+                    expires_at = (datetime.now(timezone.utc) + timedelta(days=ttl_days)).isoformat()
+
+                memory = Memory(
+                    memory_id=str(uuid4()),
+                    user_id=user_id,
+                    content=sanitized_content,
+                    created_at=_utc_now_iso(),
+                    expires_at=expires_at,
+                )
+
+                memories_by_user.append(
+                    {
+                        "memory_id": memory.memory_id,
+                        "user_id": memory.user_id,
+                        "content": memory.content,
+                        "created_at": memory.created_at,
+                        "expires_at": memory.expires_at,
+                    }
+                )
+
+                self._write_data(data)
+
+                return memory
+
+            existing = memories_by_user[related_index]
+
+            existing["content"] = sanitized_content
 
             self._write_data(data)
 
-            return memory
-
-        existing = memories_by_user[related_index]
-
-        existing["content"] = normalized_content
-
-        self._write_data(data)
-
-        return Memory(
-            memory_id=str(existing["memory_id"]),
-            user_id=str(existing["user_id"]),
-            content=str(existing["content"]),
-            created_at=str(existing["created_at"]),
-        )
+            return Memory(
+                memory_id=str(existing["memory_id"]),
+                user_id=str(existing["user_id"]),
+                content=str(existing["content"]),
+                created_at=str(existing["created_at"]),
+                expires_at=existing.get("expires_at"),
+            )
 
     @staticmethod
     def _find_related_memory_index(
@@ -922,17 +997,80 @@ class JsonFileMemoryStore(MemoryStore):
         return [memory for _, memory in scored[:top_k]]
 
     def get_memories(self, user_id: str) -> list[Memory]:
-        data = self._read_data()
-        self._ensure_user_exists(data, user_id)
+        now_iso = _utc_now_iso()
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
 
-        records = data.get("memories", {}).get(user_id, [])
+            records = data.get("memories", {}).get(user_id, [])
 
-        return [
-            Memory(
-                memory_id=record["memory_id"],
-                user_id=record["user_id"],
-                content=record["content"],
-                created_at=record["created_at"],
-            )
-            for record in records
-        ]
+            memories: list[Memory] = []
+            for record in records:
+                exp = record.get("expires_at")
+                if exp and exp <= now_iso:
+                    continue
+                memories.append(
+                    Memory(
+                        memory_id=record["memory_id"],
+                        user_id=record["user_id"],
+                        content=record["content"],
+                        created_at=record["created_at"],
+                        expires_at=record.get("expires_at"),
+                    )
+                )
+            return memories
+
+    def delete_memory(self, user_id: str, memory_id: str) -> bool:
+        """Delete one specific memory owned by user_id."""
+        normalized_memory_id = memory_id.strip()
+        if not normalized_memory_id:
+            raise MemoryWriteError("Memory ID cannot be blank.")
+
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
+
+            memories_by_user = data.setdefault("memories", {}).setdefault(user_id, [])
+            initial_count = len(memories_by_user)
+            data["memories"][user_id] = [
+                m for m in memories_by_user if m.get("memory_id") != normalized_memory_id
+            ]
+
+            if len(data["memories"][user_id]) < initial_count:
+                self._write_data(data)
+                return True
+            return False
+
+    def delete_user_memories(self, user_id: str) -> int:
+        """Delete all memories for user_id (GDPR right-to-be-forgotten)."""
+        with self._lock:
+            data = self._read_data()
+            self._ensure_user_exists(data, user_id)
+
+            memories_by_user = data.setdefault("memories", {}).get(user_id, [])
+            count = len(memories_by_user)
+            data["memories"][user_id] = []
+            if count > 0:
+                self._write_data(data)
+            return count
+
+    def purge_expired_memories(self) -> int:
+        """Purge all expired memories across all users."""
+        now_iso = _utc_now_iso()
+        purged = 0
+        with self._lock:
+            data = self._read_data()
+            all_memories = data.setdefault("memories", {})
+            for uid, mem_list in all_memories.items():
+                kept = []
+                for m in mem_list:
+                    exp = m.get("expires_at")
+                    if exp and exp <= now_iso:
+                        purged += 1
+                    else:
+                        kept.append(m)
+                all_memories[uid] = kept
+
+            if purged > 0:
+                self._write_data(data)
+        return purged

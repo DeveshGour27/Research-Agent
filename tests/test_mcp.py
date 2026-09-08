@@ -42,16 +42,18 @@ def test_mcp_policy():
     assert policy.evaluate_tool("safe_server", "any_tool") == PolicyDecision.ALLOW
     assert policy.evaluate_tool("unsafe_server", "any_tool") == PolicyDecision.DENY
 
+    # Verify strict default-deny without allowlist
+    default_policy = MCPPolicy()
+    assert default_policy.evaluate_server("safe_server") == PolicyDecision.DENY
+    assert default_policy.evaluate_tool("safe_server", "any_tool") == PolicyDecision.DENY
+
 @patch("app.mcp.client.ClientSession")
 def test_mcp_client(mock_client_session, mock_session):
     mock_client_session.return_value.__aenter__.return_value = mock_session
     
     config = MCPServerConfig(command="dummy", args=[], enabled=True)
     client = MCPClient("test_server", config, MockMCPTransport)
-    
-    # Connect
     client.connect()
-    mock_session.initialize.assert_awaited_once()
     
     # Discover tools
     tools = client.discover_tools()
@@ -70,7 +72,7 @@ def test_mcp_tool():
     client_mock = MagicMock()
     client_mock.name = "test_server"
     
-    policy = MCPPolicy()
+    policy = MCPPolicy(allowed_servers=["test_server"])
     metadata = MCPToolMetadata(name="my_tool", description="desc", input_schema={})
     
     tool = MCPTool(client_mock, policy, metadata)

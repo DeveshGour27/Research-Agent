@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from typing import Callable
 
 from sqlalchemy.orm import sessionmaker
@@ -255,8 +256,14 @@ class AsyncJobManager:
             history_data = await asyncio.to_thread(_get_chat_history)
             effective_goal = history_data[0] if history_data else goal
             chat_id = history_data[1] if history_data else None
-
-            context = AgentExecutionContext(task=effective_goal, user_id=user_id, chat_id=chat_id, metadata={"job_id": job_id})
+            deadline_at = time.monotonic() + self._job_timeout
+            context = AgentExecutionContext(
+                task=effective_goal,
+                user_id=user_id,
+                chat_id=chat_id,
+                metadata={"job_id": job_id},
+                deadline_at=deadline_at,
+            )
             self._job_contexts[job_id] = context
             request = AgentRequest(input_text=effective_goal, context=context, metadata={"job_id": job_id, "user_id": user_id})
             supervisor = self._supervisor_factory()

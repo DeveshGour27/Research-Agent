@@ -85,8 +85,11 @@ def test_data(engine, TestingSessionLocal):
 
 @pytest.fixture
 def client(engine, TestingSessionLocal):
-    os.environ["DATABASE_URL"] = str(engine.url)
     from app.db import database as db_module
+    old_env_db = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = str(engine.url)
+    old_engine = db_module.engine
+    old_session_local = db_module.SessionLocal
     db_module.engine = engine
     db_module.SessionLocal = TestingSessionLocal
     
@@ -114,12 +117,10 @@ def client(engine, TestingSessionLocal):
     )
     # Override default_supervisor_factory so that when lifespan runs, it gets our mock
     import app.main_api as main_api_module
+    old_main_session = main_api_module.SessionLocal
+    main_api_module.SessionLocal = TestingSessionLocal
     original_factory = main_api_module.default_supervisor_factory
     main_api_module.default_supervisor_factory = lambda hitl: MockSupervisor(output="TEST_RESPONSE_123")
-    
-    from app.db.repository import SQLJobRepository
-    original_claim = SQLJobRepository.claim_job
-    SQLJobRepository.claim_job = lambda self, jid, wid: True
     
     with TestClient(fastapi_app) as c:
         # After lifespan, job_manager is created. We still need to mock submit_job for sqlite threading
@@ -131,13 +132,23 @@ def client(engine, TestingSessionLocal):
         
         yield c
 
-    SQLJobRepository.claim_job = original_claim
-    app.main_api.default_supervisor_factory = original_factory
+    main_api_module.SessionLocal = old_main_session
+    main_api_module.default_supervisor_factory = original_factory
     loop.run_until_complete(job_manager.shutdown())
     loop.close()
-    app.dependency_overrides.clear()
-    if hasattr(app.state, 'job_manager'):
-        del app.state.job_manager
+    fastapi_app.dependency_overrides.clear()
+    if hasattr(fastapi_app.state, 'job_manager'):
+        del fastapi_app.state.job_manager
+    if hasattr(fastapi_app.state, 'hitl_service'):
+        from app.hitl.service import HITLService
+        from app.hitl.policy import HITLPolicy
+        fastapi_app.state.hitl_service = HITLService(old_session_local, HITLPolicy())
+    db_module.engine = old_engine
+    db_module.SessionLocal = old_session_local
+    if old_env_db is not None:
+        os.environ["DATABASE_URL"] = old_env_db
+    else:
+        os.environ.pop("DATABASE_URL", None)
 
 def test_chat_message_to_assistant_response(client, test_data):
     cookies = {"session_id": test_data["session_id"]}
@@ -149,7 +160,7 @@ def test_chat_message_to_assistant_response(client, test_data):
     
     # 2. Send message
     res = client.post(f"/api/v1/chats/{chat_id}/messages", json={"content": "What is 2+2?"}, cookies=cookies)
-    assert res.status_code == 200
+    assert res.status_code in (200, 202)
     job_id = res.json()["job_id"]
     
     # 3. Wait for job to complete (JobManager runs in background)

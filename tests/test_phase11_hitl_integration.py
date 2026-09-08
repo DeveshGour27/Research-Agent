@@ -7,23 +7,33 @@ from fastapi.testclient import TestClient
 from uuid import uuid4
 
 from app.main_api import app
-from app.db.database import SessionLocal
+from app.db.database import SessionLocal, Base, engine
 from app.hitl.service import HITLService
 from app.hitl.policy import HITLPolicy
 from app.db.repository import SQLJobRepository
-from app.db.models import Job, User
+from app.db.models import Job, User, HITLRequest
 from app.hitl.models import HITLPolicyDecision, HITLRequestStatus
 from app.exceptions import AgentHITLPauseException
 from app.api.auth import get_current_user
+
+Base.metadata.create_all(bind=engine)
 
 policy = HITLPolicy(require_human_plans=True)
 app.state.hitl_service = HITLService(SessionLocal, policy)
 
 client = TestClient(app)
 
+@pytest.fixture(autouse=True)
+def setup_hitl_test():
+    from app.db.database import SessionLocal as CurrentSessionLocal, engine as current_engine
+    Base.metadata.create_all(bind=current_engine)
+    app.state.hitl_service = HITLService(CurrentSessionLocal, policy)
+    yield
+
 @pytest.fixture
-def db_session():
-    db = SessionLocal()
+def db_session(setup_hitl_test):
+    from app.db.database import SessionLocal as CurrentSessionLocal
+    db = CurrentSessionLocal()
     yield db
     db.close()
 

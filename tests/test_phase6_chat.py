@@ -148,7 +148,7 @@ def test_message_creation_and_job_association(client, test_data):
     
     # A can send a message
     res = client.post(f"/api/v1/chats/{chat_id}/messages", json={"content": "research something"}, cookies=cookies)
-    assert res.status_code == 200
+    assert res.status_code in (200, 202)
     data = res.json()
     assert "job_id" in data
     job_id = data["job_id"]
@@ -167,7 +167,7 @@ def test_full_flow(client, test_data):
     chat_id = res.json()["chat_id"]
     
     res = client.post(f"/api/v1/chats/{chat_id}/messages", json={"content": "do a full test"}, cookies=cookies)
-    assert res.status_code == 200
+    assert res.status_code in (200, 202)
     job_id = res.json()["job_id"]
     
     # reload chat

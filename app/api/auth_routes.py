@@ -43,8 +43,21 @@ class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
+def _check_auth_rate_limit(request: Request) -> None:
+    rate_limiter = getattr(request.app.state, "rate_limiter", None)
+    if rate_limiter:
+        client_ip = request.client.host if request.client else "unknown"
+        allowed, retry_after = rate_limiter.is_allowed(f"auth_ip:{client_ip}")
+        if not allowed:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Too many authentication attempts. Please try again in {retry_after} seconds.",
+                headers={"Retry-After": str(retry_after)}
+            )
+
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
-def signup(req: SignupRequest, db: Session = Depends(get_db)):
+def signup(req: SignupRequest, request: Request, db: Session = Depends(get_db)):
+    _check_auth_rate_limit(request)
     if req.password != req.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     if len(req.password) < 8:
@@ -126,7 +139,8 @@ def _create_session(user_id: str, db: Session, response: Response):
     )
 
 @router.post("/login")
-def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(req: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+    _check_auth_rate_limit(request)
     user = db.query(User).filter(or_(User.email == req.identifier, User.username == req.identifier)).first()
     
     if not user or not user.password_hash:
@@ -164,7 +178,8 @@ def get_me(user: User = Depends(get_current_web_user)):
     return {"email": user.email, "username": user.username, "user_id": user.user_id}
 
 @router.post("/forgot-password")
-def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(req: ForgotPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    _check_auth_rate_limit(request)
     user = db.query(User).filter(User.email == req.email).first()
     if user:
         raw_token, hashed_token = generate_verification_token()
@@ -178,7 +193,8 @@ def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
     return {"message": "If that email exists, a password reset link has been sent."}
 
 @router.post("/reset-password")
-def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    _check_auth_rate_limit(request)
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not user.reset_token_hash or not user.reset_token_expires_at:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
@@ -201,6 +217,13 @@ def reset_password(req: ResetPasswordRequest, db: Session = Depends(get_db)):
     user.password_hash = get_password_hash(req.password)
     user.reset_token_hash = None
     user.reset_token_expires_at = None
+    
+    # Revoke all active sessions upon password reset
+    db.query(UserSession).filter(
+        UserSession.user_id == user.user_id,
+        UserSession.revoked_at.is_(None)
+    ).update({"revoked_at": _utc_now()})
+    
     db.commit()
     return {"message": "Password reset successfully"}
 
@@ -216,6 +239,13 @@ def change_password(req: ChangePasswordRequest, user: User = Depends(get_current
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
         
     user.password_hash = get_password_hash(req.new_password)
+    
+    # Revoke all prior sessions upon password change
+    db.query(UserSession).filter(
+        UserSession.user_id == user.user_id,
+        UserSession.revoked_at.is_(None)
+    ).update({"revoked_at": _utc_now()})
+    
     db.commit()
     return {"message": "Password changed successfully"}
 
@@ -229,25 +259,45 @@ def delete_account(user: User = Depends(get_current_web_user), db: Session = Dep
 # Google OAuth
 # ------------------------------------------------------------------ #
 @router.get("/google/login")
-def google_login():
+def google_login(response: Response):
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
         
+    state = secrets.token_urlsafe(32)
+    response.set_cookie(
+        key="oauth_state",
+        value=state,
+        httponly=True,
+        secure=settings.environment == Environment.PRODUCTION,
+        samesite="lax",
+        max_age=300,  # 5 minutes
+        path="/"
+    )
     url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode({
         "client_id": settings.google_client_id,
         "redirect_uri": settings.google_redirect_uri,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "online",
-        "prompt": "consent"
+        "prompt": "consent",
+        "state": state
     })
     return {"url": url}
 
 @router.get("/google/callback")
-async def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
+async def google_callback(
+    code: str,
+    request: Request,
+    state: str | None = None,
+    oauth_state: str | None = Cookie(None),
+    db: Session = Depends(get_db)
+):
     if not settings.google_client_id:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
         
+    if not state or not oauth_state or not secrets.compare_digest(state, oauth_state):
+        raise HTTPException(status_code=400, detail="Invalid or missing OAuth state parameter")
+
     async with httpx.AsyncClient() as client:
         resp = await client.post("https://oauth2.googleapis.com/token", data={
             "client_id": settings.google_client_id,
@@ -269,9 +319,13 @@ async def google_callback(code: str, request: Request, db: Session = Depends(get
         userinfo = user_resp.json()
         google_sub = userinfo.get("id")
         email = userinfo.get("email")
+        email_verified = userinfo.get("verified_email", userinfo.get("email_verified", True))
         
         if not google_sub or not email:
             raise HTTPException(status_code=400, detail="Invalid Google profile data")
+            
+        if not email_verified:
+            raise HTTPException(status_code=400, detail="Google account email is not verified")
             
     # Check if OAuth identity exists
     oauth_id = db.query(OAuthIdentity).filter(
@@ -312,6 +366,7 @@ async def google_callback(code: str, request: Request, db: Session = Depends(get
     db.commit()
     
     response = RedirectResponse(url=f"{settings.app_base_url}/")
+    response.delete_cookie("oauth_state", path="/")
     _create_session(user.user_id, db, response)
     
     return response

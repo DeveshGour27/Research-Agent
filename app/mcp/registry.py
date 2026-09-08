@@ -104,7 +104,7 @@ def get_mcp_registry() -> MCPRegistry:
         from app.config import settings
         import json
         
-        policy = MCPPolicy()
+        policy = MCPPolicy(allowed_servers=settings.mcp_allowed_servers)
         _mcp_registry_instance = MCPRegistry(policy=policy)
         
         # Parse MCP server configuration
