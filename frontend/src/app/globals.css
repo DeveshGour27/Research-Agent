@@ -25,3 +25,31 @@ body {
   box-sizing: border-box;
 }
 
+/* System theme adaptation */
+@media (prefers-color-scheme: light) {
+  :root {
+    --ds-bg: #f5f5f5;
+    --ds-fg: #111111;
+    --ds-sidebar: #ffffff;
+    --ds-surface: #e8e8e8;
+  }
+
+  body {
+    background-color: #f5f5f5;
+    color: #111111;
+  }
+
+  /* Text colors */
+  .text-white { color: #111111 !important; }
+  .text-gray-200 { color: #222222 !important; }
+  .text-gray-300 { color: #444444 !important; }
+  .text-gray-400 { color: #555555 !important; }
+  .text-gray-500 { color: #777777 !important; }
+
+  /* Input backgrounds */
+  input, textarea {
+    background-color: #e8e8e8 !important;
+    color: #111111 !important;
+  }
+}
+

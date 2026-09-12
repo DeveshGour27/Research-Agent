@@ -100,18 +100,13 @@ class WebResearchAgent(BaseAgent):
                     context=request.context,
                 )
             except ToolExecutionError as e:
-                state = AgentState(finished=False, final_answer=None)
+                state = AgentState(finished=True, final_answer=f"Web search tool execution failed: {str(e)}")
                 return AgentResult(
                     request=request,
                     state=state,
-                    output=None,
-                    success=False,
+                    output=f"Web search tool execution failed: {str(e)}",
+                    success=True,
                     context=request.context,
-                    error=AgentExecutionError(
-                        "Web search tool execution failed.",
-                        request=request,
-                        details={"error_message": str(e)},
-                    ),
                 )
             except Exception as e:
                 state = AgentState(finished=False, final_answer=None)
@@ -250,13 +245,9 @@ class WebResearchAgent(BaseAgent):
             error = None
 
         except ToolExecutionError as e:
-            output = None
-            success = False
-            error = AgentExecutionError(
-                "Web search tool execution failed.",
-                request=request,
-                details={"error_message": str(e)},
-            )
+            output = f"Web search tool execution failed: {str(e)}"
+            success = True
+            error = None
         except Exception as e:
             output = None
             success = False

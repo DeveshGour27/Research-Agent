@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 import Link from "next/link";
-import { Plus, Search, Settings, Sun, LogOut, X } from "lucide-react";
+import { Plus, Search, Settings, LogOut, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import Image from "next/image";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [chats, setChats] = useState<any[]>([]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [loading, setLoading] = useState(true);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
   const pathname = usePathname();
 
@@ -87,6 +90,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  // Filtered chats based on search query
+  const filteredChats = chats.filter(chat => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (chat.title || "New Chat").toLowerCase().includes(q);
+  });
+
   if (loading) return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
 
   return (
@@ -145,88 +155,113 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       {/* Sidebar */}
-      <div className="w-[260px] bg-[#0A0A0A] border-r border-gray-800 flex flex-col flex-shrink-0">
-        <div className="p-4 flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-sm">
-            AI
-          </div>
-          <span className="font-semibold flex-1">AI Assistant</span>
-        </div>
-        
-        <div className="px-4 pb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="w-full bg-[#1A1A1A] text-sm text-gray-300 rounded-full pl-9 pr-4 py-2 outline-none border border-transparent focus:border-gray-700 transition"
-            />
-          </div>
-        </div>
-
-        <div className="px-4 mb-4">
-          <button 
-            onClick={handleNewChat}
-            className="w-full bg-white text-black flex items-center justify-center space-x-2 py-2.5 rounded-full font-medium hover:bg-gray-200 transition"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Start New Chat</span>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-3">
-          <div className="text-xs font-medium text-gray-500 px-2 py-2 mb-1 flex items-center uppercase tracking-wider">
-            Recent
-          </div>
-          <div className="space-y-1">
-            {chats.map(chat => {
-              const isActive = pathname === `/chat/${chat.chat_id}`;
-              return (
-                <Link key={chat.chat_id} href={`/chat/${chat.chat_id}`} className={`block p-3 rounded-xl transition ${isActive ? "bg-[#1A1A1A]" : "hover:bg-[#1A1A1A]"}`}>
-                  <div className="text-sm font-medium text-gray-200 truncate">{chat.title || "New Chat"}</div>
-                  <div className="text-xs text-gray-500 mt-1 flex justify-between">
-                    <span>{new Date(chat.updated_at).toLocaleDateString()}</span>
-                  </div>
-                </Link>
-              );
-            })}
-            {chats.length === 0 && (
-              <div className="text-sm text-gray-500 px-2 py-4">No recent chats</div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-gray-800">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setIsSettingsOpen(true)} className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
-            </button>
-            <button className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition bg-[#1A1A1A] px-3 py-1.5 rounded-full">
-              <Sun className="h-4 w-4" />
-              <span>Light</span>
+      {sidebarVisible && (
+        <div className="w-[260px] bg-[#0A0A0A] border-r border-gray-800 flex flex-col flex-shrink-0">
+          {/* Brand row — DeepSearch logo + name + collapse button at far right */}
+          <div className="p-4 flex items-center">
+            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-black">
+              <Image src="/logo.png" alt="DeepSearch" width={32} height={32} className="w-full h-full object-cover" />
+            </div>
+            <span className="font-semibold ml-3 flex-1 tracking-tight">DeepSearch</span>
+            {/* Toggle — sits right beside the sidebar/chat partition */}
+            <button
+              onClick={() => setSidebarVisible(false)}
+              className="p-1.5 text-gray-500 hover:text-white transition rounded-lg hover:bg-[#1A1A1A] flex-shrink-0"
+              title="Hide sidebar"
+            >
+              <PanelLeftClose className="h-4 w-4" />
             </button>
           </div>
           
-          <div className="flex items-center justify-between group cursor-pointer">
-            <div className="flex items-center space-x-3 truncate">
-              <div className="w-8 h-8 rounded-full bg-[#1A1A1A] border border-gray-700 flex items-center justify-center text-sm font-bold flex-shrink-0 text-white">
-                {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
-              </div>
-              <div className="truncate">
-                <div className="text-sm font-medium text-white truncate" title={user?.email || "User"}>{user?.username || user?.email || "User"}</div>
-                <div className="text-xs text-gray-500">Member</div>
-              </div>
+          {/* Search */}
+          <div className="px-4 pb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+              <input 
+                type="text" 
+                placeholder="Search chats..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-[#1A1A1A] text-sm text-gray-300 rounded-full pl-9 pr-4 py-2 outline-none border border-transparent focus:border-gray-700 transition"
+              />
             </div>
-            <button onClick={handleLogout} className="text-gray-500 hover:text-white transition opacity-0 group-hover:opacity-100" title="Logout">
-              <LogOut className="h-4 w-4" />
+          </div>
+
+          {/* New Chat */}
+          <div className="px-4 mb-4">
+            <button 
+              onClick={handleNewChat}
+              className="w-full bg-white text-black flex items-center justify-center space-x-2 py-2.5 rounded-full font-medium hover:bg-gray-200 transition"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Start New Chat</span>
             </button>
           </div>
+
+          {/* Chat List */}
+          <div className="flex-1 overflow-y-auto px-3">
+            <div className="text-xs font-medium text-gray-500 px-2 py-2 mb-1 flex items-center uppercase tracking-wider">
+              Recent
+            </div>
+            <div className="space-y-1">
+              {filteredChats.map(chat => {
+                const isActive = pathname === `/chat/${chat.chat_id}`;
+                return (
+                  <Link key={chat.chat_id} href={`/chat/${chat.chat_id}`} className={`block p-3 rounded-xl transition ${isActive ? "bg-[#1A1A1A]" : "hover:bg-[#1A1A1A]"}`}>
+                    <div className="text-sm font-medium text-gray-200 truncate">{chat.title || "New Chat"}</div>
+                    <div className="text-xs text-gray-500 mt-1 flex justify-between">
+                      <span>{new Date(chat.updated_at).toLocaleDateString()}</span>
+                    </div>
+                  </Link>
+                );
+              })}
+              {filteredChats.length === 0 && (
+                <div className="text-sm text-gray-500 px-2 py-4">
+                  {searchQuery.trim() ? "No chats match your search" : "No recent chats"}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setIsSettingsOpen(true)} className="flex items-center space-x-2 text-sm text-gray-400 hover:text-white transition">
+                <Settings className="h-4 w-4" />
+                <span>Settings</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between group cursor-pointer">
+              <div className="flex items-center space-x-3 truncate">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-700 to-blue-600 border border-gray-700 flex items-center justify-center text-sm font-bold flex-shrink-0 text-white">
+                  {user?.username?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+                </div>
+                <div className="truncate">
+                  <div className="text-sm font-medium text-white truncate" title={user?.email || "User"}>{user?.username || user?.email || "User"}</div>
+                  <div className="text-xs text-gray-500">Member</div>
+                </div>
+              </div>
+              <button onClick={handleLogout} className="text-gray-500 hover:text-white transition opacity-0 group-hover:opacity-100" title="Logout">
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        {/* When sidebar is hidden, show a small open button at top-left of chat area */}
+        {!sidebarVisible && (
+          <button
+            onClick={() => setSidebarVisible(true)}
+            className="absolute top-3 left-3 z-30 p-1.5 text-gray-500 hover:text-white transition rounded-lg hover:bg-[#1A1A1A]"
+            title="Show sidebar"
+          >
+            <PanelLeftOpen className="h-4 w-4" />
+          </button>
+        )}
         {children}
       </div>
     </div>

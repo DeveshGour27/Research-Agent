@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 
 function LoginContent() {
@@ -45,6 +46,11 @@ function LoginContent() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-black">
       <div className="w-full max-w-md p-8 bg-[#0f0f0f] rounded-xl border border-gray-800">
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-black border border-gray-800">
+            <Image src="/logo.png" alt="DeepSearch" width={48} height={48} className="w-full h-full object-cover" />
+          </div>
+        </div>
         <h1 className="text-2xl font-bold mb-6 text-center text-white">Welcome back</h1>
         {error && <div className="bg-red-900/50 text-red-200 p-3 rounded mb-4 text-sm">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-4">

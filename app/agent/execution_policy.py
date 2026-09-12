@@ -15,5 +15,5 @@ class ExecutionPolicy:
 
     max_steps: int = 50
     max_failures: int = 3
-    max_replans: int = 2
+    max_replans: int = 3
     allow_replanning: bool = True

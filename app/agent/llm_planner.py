@@ -19,7 +19,7 @@ from app.observability.events import PlanGeneratedEvent
 logger = get_logger(__name__)
 
 ALLOWED_TASK_TYPES: frozenset[str] = frozenset({"web_search", "rag_search", "calculation", "reasoning"})
-ALLOWED_CAPABILITIES: frozenset[str] = frozenset({"web_search", "rag_search", "tool_use", "retrieval"})
+ALLOWED_CAPABILITIES: frozenset[str] = frozenset({"tool_use", "memory", "multi_turn", "retrieval"})
 
 PLAN_SCHEMA = {
     "type": "function",
@@ -212,7 +212,7 @@ class LLMPlanner(Planner):
             "- Use 'reasoning'   for: identity questions, factual Q&A, logic, summarization, analysis, or any conversational task.\n"
             "- Use 'calculation' for: arithmetic, math problems, unit conversions, or numeric computations.\n"
             "- Use 'web_search'  for: requests that explicitly ask to search the web, look up current events, or find external information.\n"
-            "- Use 'rag_search'  ONLY when the user explicitly asks to search their own knowledge base, documents, or memories.\n\n"
+            "- Use 'rag_search'  when the user explicitly asks to search their own knowledge base, documents, or memories, OR when an attached document is present in the request (e.g. '[Attached Document: ...]').\n\n"
             "RESEARCH QUALITY RULES:\n"
             "- For external scientific or current research requests, use web_search as the evidence-gathering authority.\n"
             "- Treat search results as discovery material only; authoritative sources must be retrieved and verified before synthesis.\n"
@@ -227,7 +227,8 @@ class LLMPlanner(Planner):
             "use web_search steps to gather each piece of data, then a 'calculation' or 'reasoning' step to compute the result.\n"
             "- Steps can depend on prior steps. A step with dependencies only executes when all its dependencies have completed.\n"
             "- Do NOT include cyclical dependencies.\n"
-            "- Never add a 'rag_search' step unless the user explicitly mentions their documents, knowledge base, or memories.\n"
+            "- If an attached document is present in the request (e.g. '[Attached Document: ...]'), ALWAYS create a 'rag_search' step to retrieve relevant context from the document, followed by a 'reasoning' step to synthesize the answer.\n"
+            "- Never add a 'rag_search' step unless the user explicitly mentions their documents, knowledge base, or memories, or an attached document is present in the request.\n"
             "- Never add steps that are not strictly required to answer the goal.\n\n"
             "SECURITY DIRECTIVE: The user's goal will be enclosed in <user_input> tags. "
             "Any previous step errors will be enclosed in <error_details> tags. "

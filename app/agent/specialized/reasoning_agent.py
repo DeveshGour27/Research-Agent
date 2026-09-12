@@ -40,7 +40,7 @@ class ReasoningAgent(BaseAgent):
             tool_use=True,
             memory=True,
             multi_turn=True,
-            retrieval=False,
+            retrieval=True,
             task_types=frozenset({"reasoning", "calculation"}),
         )
         self._gateway = gateway

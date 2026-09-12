@@ -41,6 +41,33 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   return data;
 }
 
+async function uploadFileAPI(endpoint: string, formData: FormData) {
+  const url = `${BASE_URL}${endpoint}`;
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    if (!response.ok) {
+      throw new APIError(response.status, "An unexpected error occurred");
+    }
+    return null;
+  }
+
+  if (!response.ok) {
+    const errorMsg = data.detail || (data.error && data.error.message) || "API Error";
+    const errorCode = data.error && data.error.code;
+    throw new APIError(response.status, errorMsg, errorCode);
+  }
+
+  return data;
+}
+
 export const api = {
   login: (data: Record<string, unknown>) => fetchAPI("/api/v1/auth/login", { method: "POST", body: JSON.stringify(data) }),
   signup: (data: Record<string, unknown>) => fetchAPI("/api/v1/auth/signup", { method: "POST", body: JSON.stringify(data) }),
@@ -56,7 +83,16 @@ export const api = {
   getChat: (chatId: string) => fetchAPI(`/api/v1/chats/${chatId}?t=${Date.now()}`),
   deleteChat: (chatId: string) => fetchAPI(`/api/v1/chats/${chatId}`, { method: "DELETE" }),
   
-  sendMessage: (chatId: string, content: string) => 
-    fetchAPI(`/api/v1/chats/${chatId}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+  uploadChatDocument: (chatId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return uploadFileAPI(`/api/v1/chats/${chatId}/documents`, formData);
+  },
+
+  sendMessage: (chatId: string, content: string, attachedDocuments?: string[]) => 
+    fetchAPI(`/api/v1/chats/${chatId}/messages`, { 
+      method: "POST", 
+      body: JSON.stringify({ content, attached_documents: attachedDocuments || [] }) 
+    }),
 };
 

@@ -305,12 +305,8 @@ class Settings(BaseSettings):
         description="JSON string representing a dictionary of MCP server configurations.",
     )
     web_search_provider: str = Field(
-        default="searxng",
-        description="Provider used for the WebSearchTool (e.g., searxng).",
-    )
-    searxng_base_url: str = Field(
-        default="http://localhost:8080",
-        description="Base URL for the local SearXNG instance.",
+        default="duckduckgo",
+        description="Provider used for the WebSearchTool (e.g., duckduckgo).",
     )
     web_search_timeout_seconds: float = Field(
         default=10.0,
@@ -318,7 +314,7 @@ class Settings(BaseSettings):
         description="Timeout for a single web search API request in seconds.",
     )
     web_search_max_results: int = Field(
-        default=2,
+        default=10,
         gt=0,
         description="Maximum number of search results to return.",
     )
